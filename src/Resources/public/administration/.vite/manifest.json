@@ -1,0 +1,11 @@
+{
+  "main.js": {
+    "file": "assets/splac-CY4BSoJW.js",
+    "name": "splac",
+    "src": "main.js",
+    "isEntry": true,
+    "css": [
+      "assets/splac-KRTkYO7U.css"
+    ]
+  }
+}

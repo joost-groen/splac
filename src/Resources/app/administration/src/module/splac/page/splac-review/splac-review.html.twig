@@ -1,0 +1,266 @@
+<sw-page class="splac-review">
+    <template #smart-bar-header>
+        <h2>{{ process ? process.name : '' }} – {{ $tc('splac.review.title') }}</h2>
+    </template>
+
+    <template #smart-bar-actions>
+        <sw-button size="small" @click="$router.push({ name: 'splac.index' })">
+            {{ $tc('splac.review.backToDashboard') }}
+        </sw-button>
+        <sw-button
+            v-if="isDone"
+            variant="ghost"
+            size="small"
+            @click="openProduct"
+        >
+            {{ $tc('splac.review.openProduct') }}
+        </sw-button>
+        <sw-button-process
+            v-if="isReviewable"
+            variant="primary"
+            size="small"
+            :is-loading="isApproving"
+            :process-success="false"
+            @click="onApprove"
+        >
+            {{ $tc('splac.review.approveButton') }}
+        </sw-button-process>
+    </template>
+
+    <template #content>
+        <sw-card-view v-if="process">
+            <!-- Generating banner -->
+            <sw-alert v-if="isGenerating" variant="info" class="splac-review__banner">
+                {{ $tc('splac.review.generatingBanner') }}
+                <template v-if="process.currentStep"> ({{ $tc(`splac.steps.${process.currentStep}`) }})</template>
+            </sw-alert>
+
+            <sw-alert v-if="process.status === 'failed'" variant="error" class="splac-review__banner">
+                {{ process.errorMessage }}
+            </sw-alert>
+
+            <sw-alert v-if="isReviewable && emptyFields.length" variant="warning" class="splac-review__banner">
+                {{ $tc('splac.review.emptyFieldsWarning') }}: {{ emptyFields.join(', ') }}
+            </sw-alert>
+
+            <template v-if="isReviewable || isDone">
+                <!-- Classification / identifiers -->
+                <sw-card
+                    position-identifier="splac-review-classification"
+                    :title="$tc('splac.review.cardClassification')"
+                    :is-loading="isLoading"
+                >
+                    <template #context-actions>
+                        <sw-context-menu-item
+                            :disabled="regeneratingStep !== null || isDone"
+                            @click="onRegenerate('classification')"
+                        >
+                            {{ $tc('splac.review.regenerate') }}
+                        </sw-context-menu-item>
+                    </template>
+
+                    <sw-container columns="1fr 1fr" gap="0 24px">
+                        <template v-for="locale in locales" :key="`name-${locale}`">
+                            <sw-text-field
+                                v-if="output.productName"
+                                v-model:value="output.productName[locale]"
+                                :label="`${$tc('splac.review.fieldProductName')} (${locale})`"
+                                :disabled="isDone"
+                            ></sw-text-field>
+                        </template>
+                    </sw-container>
+
+                    <sw-container columns="1fr 1fr 1fr" gap="0 24px">
+                        <sw-text-field
+                            v-if="'productNumber' in output"
+                            v-model:value="output.productNumber"
+                            :label="$tc('splac.review.fieldProductNumber')"
+                            :disabled="isDone"
+                        ></sw-text-field>
+                        <sw-text-field
+                            v-if="'ean' in output"
+                            v-model:value="output.ean"
+                            :label="$tc('splac.review.fieldEan')"
+                            :disabled="isDone"
+                        ></sw-text-field>
+                        <sw-text-field
+                            v-if="'manufacturerNumber' in output"
+                            v-model:value="output.manufacturerNumber"
+                            :label="$tc('splac.review.fieldManufacturerNumber')"
+                            :disabled="isDone"
+                        ></sw-text-field>
+                    </sw-container>
+
+                    <sw-container columns="1fr 1fr" gap="0 24px">
+                        <sw-entity-single-select
+                            v-if="'manufacturerId' in output"
+                            v-model:value="output.manufacturerId"
+                            entity="product_manufacturer"
+                            :label="$tc('splac.review.fieldManufacturer')"
+                            :help-text="$tc('splac.review.fieldManufacturerHelp')"
+                            :disabled="isDone"
+                        ></sw-entity-single-select>
+                        <sw-text-field
+                            v-if="'manufacturerName' in output"
+                            v-model:value="output.manufacturerName"
+                            :label="$tc('splac.review.fieldManufacturerName')"
+                            :disabled="isDone"
+                        ></sw-text-field>
+                    </sw-container>
+
+                    <sw-text-field
+                        v-if="'tags' in output"
+                        :value="tagList()"
+                        :label="$tc('splac.review.fieldTags')"
+                        :disabled="isDone"
+                        @update:value="onTagsChange"
+                    ></sw-text-field>
+                </sw-card>
+
+                <!-- Description -->
+                <sw-card
+                    v-if="output.description"
+                    position-identifier="splac-review-description"
+                    :title="$tc('splac.review.cardDescription')"
+                    :is-loading="isLoading"
+                >
+                    <template #context-actions>
+                        <sw-context-menu-item
+                            :disabled="regeneratingStep !== null || isDone"
+                            @click="onRegenerate('description')"
+                        >
+                            {{ $tc('splac.review.regenerate') }}
+                        </sw-context-menu-item>
+                    </template>
+
+                    <div class="splac-review__locale-switch">
+                        <sw-button
+                            v-for="locale in locales"
+                            :key="locale"
+                            size="x-small"
+                            :variant="previewLocale === locale ? 'primary' : null"
+                            @click="previewLocale = locale"
+                        >
+                            {{ locale }}
+                        </sw-button>
+                    </div>
+
+                    <div class="splac-review__description-split">
+                        <sw-textarea-field
+                            :key="previewLocale"
+                            v-model="output.description[previewLocale]"
+                            class="splac-review__description-editor"
+                            :disabled="isDone"
+                        ></sw-textarea-field>
+                        <div class="splac-review__description-preview" v-html="output.description[previewLocale]"></div>
+                    </div>
+                </sw-card>
+
+                <!-- SEO -->
+                <sw-card
+                    v-if="output.metaTitle || output.metaDescription"
+                    position-identifier="splac-review-seo"
+                    :title="$tc('splac.review.cardSeo')"
+                    :is-loading="isLoading"
+                >
+                    <template #context-actions>
+                        <sw-context-menu-item
+                            :disabled="regeneratingStep !== null || isDone"
+                            @click="onRegenerate('seo')"
+                        >
+                            {{ $tc('splac.review.regenerate') }}
+                        </sw-context-menu-item>
+                    </template>
+
+                    <template v-for="locale in locales" :key="`seo-${locale}`">
+                        <sw-text-field
+                            v-if="output.metaTitle"
+                            v-model:value="output.metaTitle[locale]"
+                            :label="`${$tc('splac.review.fieldMetaTitle')} (${locale})`"
+                            :disabled="isDone"
+                        ></sw-text-field>
+                        <sw-textarea-field
+                            v-if="output.metaDescription"
+                            v-model="output.metaDescription[locale]"
+                            :label="`${$tc('splac.review.fieldMetaDescription')} (${locale})`"
+                            :disabled="isDone"
+                        ></sw-textarea-field>
+                        <sw-text-field
+                            v-if="output.keywords"
+                            v-model:value="output.keywords[locale]"
+                            :label="`${$tc('splac.review.fieldKeywords')} (${locale})`"
+                            :disabled="isDone"
+                        ></sw-text-field>
+                    </template>
+                </sw-card>
+
+                <!-- Properties -->
+                <sw-card
+                    v-if="output.propertyOptionIds"
+                    position-identifier="splac-review-properties"
+                    :title="$tc('splac.review.cardProperties')"
+                    :is-loading="isLoading"
+                >
+                    <template #context-actions>
+                        <sw-context-menu-item
+                            :disabled="regeneratingStep !== null || isDone"
+                            @click="onRegenerate('properties')"
+                        >
+                            {{ $tc('splac.review.regenerate') }}
+                        </sw-context-menu-item>
+                    </template>
+
+                    <sw-entity-multi-id-select
+                        v-model:value="output.propertyOptionIds"
+                        :repository="repositoryFactory.create('property_group_option')"
+                        :label="$tc('splac.review.fieldProperties')"
+                        :disabled="isDone"
+                    ></sw-entity-multi-id-select>
+                </sw-card>
+
+                <!-- Generated category -->
+                <sw-card
+                    v-if="hasCategoryOutput && output.category"
+                    position-identifier="splac-review-category"
+                    :title="$tc('splac.review.cardCategory')"
+                    :is-loading="isLoading"
+                >
+                    <template #context-actions>
+                        <sw-context-menu-item
+                            :disabled="regeneratingStep !== null || isDone"
+                            @click="onRegenerate('category')"
+                        >
+                            {{ $tc('splac.review.regenerate') }}
+                        </sw-context-menu-item>
+                    </template>
+
+                    <template v-for="locale in locales" :key="`cat-${locale}`">
+                        <sw-text-field
+                            v-if="output.category.name"
+                            v-model:value="output.category.name[locale]"
+                            :label="`${$tc('splac.review.fieldCategoryName')} (${locale})`"
+                            :disabled="isDone"
+                        ></sw-text-field>
+                        <sw-textarea-field
+                            v-if="output.category.description"
+                            v-model="output.category.description[locale]"
+                            :label="`${$tc('splac.review.fieldCategoryDescription')} (${locale})`"
+                            :disabled="isDone"
+                        ></sw-textarea-field>
+                    </template>
+                </sw-card>
+            </template>
+
+            <sw-card
+                v-else-if="!isGenerating && process.status !== 'failed'"
+                position-identifier="splac-review-empty"
+            >
+                <sw-empty-state
+                    :title="$tc('splac.review.notReadyTitle')"
+                    :subline="$tc('splac.review.notReadySubline')"
+                    :absolute="false"
+                ></sw-empty-state>
+            </sw-card>
+        </sw-card-view>
+    </template>
+</sw-page>

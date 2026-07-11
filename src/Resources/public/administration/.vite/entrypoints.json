@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/splac/administration/",
+  "entryPoints": {
+    "splac": {
+      "css": [
+        "/bundles/splac/administration/assets/splac-KRTkYO7U.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/splac/administration/assets/splac-CY4BSoJW.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+
+    <card>
+        <title>LLM Provider</title>
+        <title lang="de-DE">LLM-Anbieter</title>
+
+        <input-field type="single-select">
+            <name>provider</name>
+            <label>Active provider</label>
+            <label lang="de-DE">Aktiver Anbieter</label>
+            <defaultValue>openai</defaultValue>
+            <options>
+                <option>
+                    <id>openai</id>
+                    <name>OpenAI</name>
+                </option>
+                <option>
+                    <id>anthropic</id>
+                    <name>Anthropic</name>
+                </option>
+                <option>
+                    <id>gemini</id>
+                    <name>Google Gemini</name>
+                </option>
+                <option>
+                    <id>mistral</id>
+                    <name>Mistral</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
+        <title>OpenAI</title>
+
+        <input-field type="password">
+            <name>openaiApiKey</name>
+            <label>API key</label>
+            <label lang="de-DE">API-Schlüssel</label>
+        </input-field>
+
+        <input-field>
+            <name>openaiModel</name>
+            <label>Model</label>
+            <label lang="de-DE">Modell</label>
+            <defaultValue>gpt-4o</defaultValue>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Anthropic</title>
+
+        <input-field type="password">
+            <name>anthropicApiKey</name>
+            <label>API key</label>
+            <label lang="de-DE">API-Schlüssel</label>
+        </input-field>
+
+        <input-field>
+            <name>anthropicModel</name>
+            <label>Model</label>
+            <label lang="de-DE">Modell</label>
+            <defaultValue>claude-sonnet-4-5</defaultValue>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Google Gemini</title>
+
+        <input-field type="password">
+            <name>geminiApiKey</name>
+            <label>API key</label>
+            <label lang="de-DE">API-Schlüssel</label>
+        </input-field>
+
+        <input-field>
+            <name>geminiModel</name>
+            <label>Model</label>
+            <label lang="de-DE">Modell</label>
+            <defaultValue>gemini-flash-latest</defaultValue>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Mistral</title>
+
+        <input-field type="password">
+            <name>mistralApiKey</name>
+            <label>API key</label>
+            <label lang="de-DE">API-Schlüssel</label>
+        </input-field>
+
+        <input-field>
+            <name>mistralModel</name>
+            <label>Model</label>
+            <label lang="de-DE">Modell</label>
+            <defaultValue>mistral-large-latest</defaultValue>
+        </input-field>
+    </card>
+</config>

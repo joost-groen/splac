@@ -1,0 +1,94 @@
+<sw-page class="splac-template-list">
+    <template #smart-bar-header>
+        <h2>{{ $tc('splac.templates.title') }}</h2>
+    </template>
+
+    <template #smart-bar-actions>
+        <sw-button
+            variant="ghost"
+            size="small"
+            @click="$router.push({ name: 'splac.categoryTemplateDetail' })"
+        >
+            {{ $tc('splac.templates.addCategoryTemplate') }}
+        </sw-button>
+        <sw-button
+            variant="primary"
+            size="small"
+            @click="$router.push({ name: 'splac.templateDetail' })"
+        >
+            {{ $tc('splac.templates.addTemplate') }}
+        </sw-button>
+    </template>
+
+    <template #content>
+        <sw-card-view>
+            <sw-card
+                class="splac-template-list__templates"
+                position-identifier="splac-template-list-templates"
+                :title="$tc('splac.templates.listingTemplatesTitle')"
+                :is-loading="isLoading"
+            >
+                <template v-if="templates && templates.length">
+                    <sw-data-grid
+                        :data-source="templates"
+                        :columns="templateColumns"
+                        :show-selection="false"
+                        :show-actions="true"
+                        identifier="splac-template-grid"
+                    >
+                        <template #column-active="{ item }">
+                            <sw-icon v-if="item.active" name="regular-checkmark-xs" small class="splac-icon--active"></sw-icon>
+                            <sw-icon v-else name="regular-times-s" small class="splac-icon--inactive"></sw-icon>
+                        </template>
+                        <template #actions="{ item }">
+                            <sw-context-menu-item @click="$router.push({ name: 'splac.templateDetail', params: { id: item.id } })">
+                                {{ $tc('global.default.edit') }}
+                            </sw-context-menu-item>
+                            <sw-context-menu-item variant="danger" @click="onDeleteTemplate(item)">
+                                {{ $tc('global.default.delete') }}
+                            </sw-context-menu-item>
+                        </template>
+                    </sw-data-grid>
+                </template>
+                <sw-empty-state
+                    v-else-if="!isLoading"
+                    :title="$tc('splac.templates.emptyTitle')"
+                    :subline="$tc('splac.templates.emptySubline')"
+                    :absolute="false"
+                ></sw-empty-state>
+            </sw-card>
+
+            <sw-card
+                class="splac-template-list__category-templates"
+                position-identifier="splac-template-list-category-templates"
+                :title="$tc('splac.templates.categoryTemplatesTitle')"
+                :is-loading="isLoading"
+            >
+                <template v-if="categoryTemplates && categoryTemplates.length">
+                    <sw-data-grid
+                        :data-source="categoryTemplates"
+                        :columns="categoryTemplateColumns"
+                        :show-selection="false"
+                        :show-actions="true"
+                        identifier="splac-category-template-grid"
+                    >
+                        <template #actions="{ item }">
+                            <sw-context-menu-item @click="$router.push({ name: 'splac.categoryTemplateDetail', params: { id: item.id } })">
+                                {{ $tc('global.default.edit') }}
+                            </sw-context-menu-item>
+                            <sw-context-menu-item variant="danger" @click="onDeleteCategoryTemplate(item)">
+                                {{ $tc('global.default.delete') }}
+                            </sw-context-menu-item>
+                        </template>
+                    </sw-data-grid>
+                </template>
+                <sw-empty-state
+                    v-else-if="!isLoading"
+                    :title="$tc('splac.templates.emptyCategoryTitle')"
+                    :subline="$tc('splac.templates.emptyCategorySubline')"
+                    :absolute="false"
+                ></sw-empty-state>
+            </sw-card>
+        </sw-card-view>
+    </template>
+</sw-page>

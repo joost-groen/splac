@@ -1,0 +1,296 @@
+<sw-page class="splac-template-detail">
+    <template #smart-bar-header>
+        <h2>{{ item && item.name ? item.name : $tc('splac.templateDetail.titleNew') }}</h2>
+    </template>
+
+    <template #smart-bar-actions>
+        <sw-button size="small" @click="$router.push({ name: 'splac.templates' })">
+            {{ $tc('global.default.cancel') }}
+        </sw-button>
+        <sw-button-process
+            variant="primary"
+            size="small"
+            :is-loading="isSaving"
+            :process-success="false"
+            @click="onSave"
+        >
+            {{ $tc('global.default.save') }}
+        </sw-button-process>
+    </template>
+
+    <template #content>
+        <sw-card-view v-if="item">
+            <sw-card
+                position-identifier="splac-template-detail-general"
+                :title="$tc('splac.templateDetail.cardGeneral')"
+                :is-loading="isLoading"
+            >
+                <sw-text-field
+                    v-model:value="item.name"
+                    :label="$tc('splac.templateDetail.fieldName')"
+                    :placeholder="$tc('splac.templateDetail.fieldNamePlaceholder')"
+                    required
+                ></sw-text-field>
+
+                <sw-switch-field
+                    v-model:value="item.active"
+                    :label="$tc('splac.templateDetail.fieldActive')"
+                ></sw-switch-field>
+
+                <sw-text-field
+                    v-model:value="item.config.productNumberPattern"
+                    :label="$tc('splac.templateDetail.fieldProductNumberPattern')"
+                    :help-text="$tc('splac.templateDetail.fieldProductNumberPatternHelp')"
+                    placeholder="LAP-{model}"
+                ></sw-text-field>
+
+                <sw-entity-single-select
+                    v-model:value="item.config.defaultTaxId"
+                    entity="tax"
+                    :label="$tc('splac.templateDetail.fieldDefaultTax')"
+                ></sw-entity-single-select>
+
+                <sw-entity-multi-id-select
+                    v-model:value="item.config.defaultSalesChannelIds"
+                    :repository="repositoryFactory.create('sales_channel')"
+                    :label="$tc('splac.templateDetail.fieldDefaultSalesChannels')"
+                ></sw-entity-multi-id-select>
+            </sw-card>
+
+            <sw-card
+                position-identifier="splac-template-detail-features"
+                :title="$tc('splac.templateDetail.cardFeatures')"
+                :is-loading="isLoading"
+            >
+                <div class="splac-template-detail__features">
+                    <sw-switch-field
+                        v-for="feature in featureList"
+                        :key="feature"
+                        v-model:value="item.config.features[feature]"
+                        :label="$tc(`splac.templateDetail.feature.${feature}`)"
+                    ></sw-switch-field>
+                </div>
+            </sw-card>
+
+            <sw-card
+                position-identifier="splac-template-detail-description"
+                :title="$tc('splac.templateDetail.cardDescription')"
+                :is-loading="isLoading"
+            >
+                <p class="splac-template-detail__hint">
+                    {{ $tc('splac.templateDetail.descriptionHint') }}
+                </p>
+
+                <div class="splac-template-detail__locale-tabs">
+                    <button
+                        v-for="locale in locales"
+                        :key="locale"
+                        type="button"
+                        class="splac-template-detail__locale-tab"
+                        :class="{ 'is--active': activeDescriptionLocale === locale }"
+                        @click="activeDescriptionLocale = locale"
+                    >
+                        {{ locale }}
+                    </button>
+                </div>
+
+                <div class="splac-template-detail__block-library">
+                    <div>
+                        <strong>{{ $tc('splac.templateDetail.addBlock') }}</strong>
+                        <span>{{ $tc('splac.templateDetail.addBlockHint') }}</span>
+                    </div>
+                    <div class="splac-template-detail__block-library-actions">
+                        <sw-button size="small" @click="addDescriptionBlock('heading')">
+                            + {{ $tc('splac.templateDetail.blockType.heading') }}
+                        </sw-button>
+                        <sw-button size="small" @click="addDescriptionBlock('paragraph')">
+                            + {{ $tc('splac.templateDetail.blockType.paragraph') }}
+                        </sw-button>
+                        <sw-button size="small" @click="addDescriptionBlock('table')">
+                            + {{ $tc('splac.templateDetail.blockType.table') }}
+                        </sw-button>
+                    </div>
+                </div>
+
+                <sw-empty-state
+                    v-if="!activeDescriptionBlocks.length"
+                    :title="$tc('splac.templateDetail.emptyBlocksTitle')"
+                    :subline="$tc('splac.templateDetail.emptyBlocksSubline')"
+                    :absolute="false"
+                ></sw-empty-state>
+
+                <div v-else class="splac-template-detail__blocks">
+                    <section
+                        v-for="(block, blockIndex) in activeDescriptionBlocks"
+                        :key="block.id"
+                        class="splac-template-detail__block"
+                    >
+                        <header class="splac-template-detail__block-header">
+                            <div class="splac-template-detail__block-title">
+                                <span class="splac-template-detail__block-order">{{ blockIndex + 1 }}</span>
+                                <strong>{{ blockTypeLabel(block.type) }}</strong>
+                            </div>
+                            <div class="splac-template-detail__block-actions">
+                                <sw-button
+                                    size="x-small"
+                                    square
+                                    :disabled="blockIndex === 0"
+                                    :title="$tc('splac.templateDetail.moveBlockUp')"
+                                    @click="moveDescriptionBlock(blockIndex, -1)"
+                                >↑</sw-button>
+                                <sw-button
+                                    size="x-small"
+                                    square
+                                    :disabled="blockIndex === activeDescriptionBlocks.length - 1"
+                                    :title="$tc('splac.templateDetail.moveBlockDown')"
+                                    @click="moveDescriptionBlock(blockIndex, 1)"
+                                >↓</sw-button>
+                                <sw-button
+                                    size="x-small"
+                                    square
+                                    variant="danger"
+                                    :title="$tc('global.default.delete')"
+                                    @click="removeDescriptionBlock(blockIndex)"
+                                >×</sw-button>
+                            </div>
+                        </header>
+
+                        <div class="splac-template-detail__block-body">
+                            <div v-if="block.type === 'heading'">
+                                <sw-select-field
+                                    v-model="block.level"
+                                    :label="$tc('splac.templateDetail.headingLevel')"
+                                    :options="headingLevelOptions"
+                                ></sw-select-field>
+                                <sw-text-field
+                                    v-model:value="block.content"
+                                    :label="$tc('splac.templateDetail.headingText')"
+                                    :help-text="$tc('splac.templateDetail.inlinePlaceholderHelp')"
+                                ></sw-text-field>
+                            </div>
+
+                            <div
+                                v-else-if="block.type === 'paragraph'"
+                            >
+                                <sw-textarea-field
+                                    v-model="block.content"
+                                    :label="$tc('splac.templateDetail.paragraphText')"
+                                    :help-text="$tc('splac.templateDetail.inlinePlaceholderHelp')"
+                                ></sw-textarea-field>
+                            </div>
+
+                            <div v-else-if="block.type === 'table'">
+                                <sw-text-field
+                                    v-model:value="block.title"
+                                    :label="$tc('splac.templateDetail.tableTitle')"
+                                    :placeholder="$tc('splac.templateDetail.tableTitlePlaceholder')"
+                                ></sw-text-field>
+
+                                <div class="splac-template-detail__table-rows">
+                                    <div
+                                        v-for="(row, rowIndex) in block.rows"
+                                        :key="row.id"
+                                        class="splac-template-detail__table-row"
+                                    >
+                                        <span class="splac-template-detail__table-row-number">{{ rowIndex + 1 }}</span>
+                                        <sw-text-field
+                                            v-model:value="row.label"
+                                            :label="$tc('splac.templateDetail.tablePropertyLabel')"
+                                            :placeholder="$tc('splac.templateDetail.tablePropertyLabelPlaceholder')"
+                                        ></sw-text-field>
+                                        <sw-select-field
+                                            v-model="row.mode"
+                                            :label="$tc('splac.templateDetail.tableValueMode')"
+                                            :options="tableValueModeOptions"
+                                        ></sw-select-field>
+                                        <sw-text-field
+                                            v-if="row.mode === 'placeholder'"
+                                            v-model:value="row.placeholder"
+                                            :label="$tc('splac.templateDetail.tableSourceField')"
+                                            :placeholder="$tc('splac.templateDetail.tableSourceFieldPlaceholder')"
+                                            :help-text="$tc('splac.templateDetail.tableSourceFieldHelp')"
+                                        ></sw-text-field>
+                                        <sw-text-field
+                                            v-else
+                                            v-model:value="row.content"
+                                            :label="$tc('splac.templateDetail.tableStaticValue')"
+                                        ></sw-text-field>
+                                        <sw-button
+                                            size="x-small"
+                                            square
+                                            variant="danger"
+                                            :title="$tc('global.default.delete')"
+                                            @click="removeTableRow(block, rowIndex)"
+                                        >×</sw-button>
+                                    </div>
+                                </div>
+
+                                <sw-button size="small" @click="addTableRow(block)">
+                                    + {{ $tc('splac.templateDetail.addTableProperty') }}
+                                </sw-button>
+                            </div>
+
+                            <div v-else>
+                                <sw-alert variant="info">
+                                    {{ $tc('splac.templateDetail.legacyHtmlHint') }}
+                                </sw-alert>
+                                <sw-textarea-field
+                                    v-model="block.content"
+                                    class="splac-template-detail__html-textarea"
+                                    :label="$tc('splac.templateDetail.blockType.html')"
+                                ></sw-textarea-field>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="splac-template-detail__preview">
+                    <div class="splac-template-detail__preview-header">
+                        <strong>{{ $tc('splac.templateDetail.preview') }}</strong>
+                        <span>{{ activeDescriptionLocale }}</span>
+                    </div>
+                    <div
+                        v-if="renderDescriptionLocale(activeDescriptionLocale)"
+                        class="splac-template-detail__preview-content"
+                        v-html="renderDescriptionLocale(activeDescriptionLocale)"
+                    ></div>
+                    <p v-else class="splac-template-detail__preview-empty">
+                        {{ $tc('splac.templateDetail.previewEmpty') }}
+                    </p>
+                </div>
+            </sw-card>
+
+            <sw-card
+                position-identifier="splac-template-detail-seo"
+                :title="$tc('splac.templateDetail.cardSeo')"
+                :is-loading="isLoading"
+            >
+                <div
+                    v-for="field in ['metaTitle', 'metaDescription']"
+                    :key="field"
+                    class="splac-template-detail__seo-field"
+                >
+                    <h4>{{ $tc(`splac.templateDetail.seoField.${field}`) }}</h4>
+
+                    <sw-select-field
+                        v-model="item.config.fieldModes[field].mode"
+                        :label="$tc('splac.templateDetail.fieldMode')"
+                        :options="modeOptions"
+                    ></sw-select-field>
+
+                    <sw-textarea-field
+                        v-for="locale in locales"
+                        :key="`${field}-${locale}`"
+                        v-model="item.config.fieldModes[field][locale]"
+                        :label="`${$tc(item.config.fieldModes[field].mode === 'placeholder'
+                            ? 'splac.templateDetail.fieldTextWithPlaceholders'
+                            : 'splac.templateDetail.fieldInstruction')} (${locale})`"
+                        :placeholder="item.config.fieldModes[field].mode === 'placeholder'
+                            ? $tc('splac.templateDetail.placeholderModeExample')
+                            : $tc('splac.templateDetail.instructionModeExample')"
+                    ></sw-textarea-field>
+                </div>
+            </sw-card>
+        </sw-card-view>
+    </template>
+</sw-page>

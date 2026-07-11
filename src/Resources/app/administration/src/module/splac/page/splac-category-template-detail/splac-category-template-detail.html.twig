@@ -1,0 +1,66 @@
+<sw-page class="splac-category-template-detail">
+    <template #smart-bar-header>
+        <h2>{{ item && item.name ? item.name : $tc('splac.categoryTemplateDetail.titleNew') }}</h2>
+    </template>
+
+    <template #smart-bar-actions>
+        <sw-button size="small" @click="$router.push({ name: 'splac.templates' })">
+            {{ $tc('global.default.cancel') }}
+        </sw-button>
+        <sw-button-process
+            variant="primary"
+            size="small"
+            :is-loading="isSaving"
+            :process-success="false"
+            @click="onSave"
+        >
+            {{ $tc('global.default.save') }}
+        </sw-button-process>
+    </template>
+
+    <template #content>
+        <sw-card-view v-if="item">
+            <sw-card
+                position-identifier="splac-category-template-general"
+                :title="$tc('splac.categoryTemplateDetail.cardGeneral')"
+                :is-loading="isLoading"
+            >
+                <sw-text-field
+                    v-model:value="item.name"
+                    :label="$tc('splac.templateDetail.fieldName')"
+                    required
+                ></sw-text-field>
+
+                <sw-entity-single-select
+                    v-model:value="item.parentCategoryId"
+                    entity="category"
+                    :label="$tc('splac.categoryTemplateDetail.fieldParentCategory')"
+                    :help-text="$tc('splac.categoryTemplateDetail.fieldParentCategoryHelp')"
+                ></sw-entity-single-select>
+            </sw-card>
+
+            <sw-card
+                v-for="field in ['name', 'description']"
+                :key="field"
+                :position-identifier="`splac-category-template-${field}`"
+                :title="$tc(`splac.categoryTemplateDetail.card_${field}`)"
+                :is-loading="isLoading"
+            >
+                <sw-select-field
+                    v-model="item.config[field].mode"
+                    :label="$tc('splac.templateDetail.fieldMode')"
+                    :options="modeOptions"
+                ></sw-select-field>
+
+                <sw-textarea-field
+                    v-for="locale in locales"
+                    :key="`${field}-${locale}`"
+                    v-model="item.config[field][locale]"
+                    :label="`${$tc(item.config[field].mode === 'placeholder'
+                        ? 'splac.templateDetail.fieldTextWithPlaceholders'
+                        : 'splac.templateDetail.fieldInstruction')} (${locale})`"
+                ></sw-textarea-field>
+            </sw-card>
+        </sw-card-view>
+    </template>
+</sw-page>

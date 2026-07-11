@@ -1,0 +1,30 @@
+{
+    "name": "joostgroen/splac",
+    "description": "Splac - Shopware Product Listing Acceleration Copilot",
+    "type": "shopware-platform-plugin",
+    "license": "MIT",
+    "version": "1.0.0",
+    "require": {
+        "shopware/core": "~6.7.0",
+        "smalot/pdfparser": "^2.12"
+    },
+    "autoload": {
+        "psr-4": {
+            "Splac\\": "src/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "Splac\\Splac",
+        "label": {
+            "de-DE": "Splac \u2013 Product Listing Acceleration Copilot",
+            "en-GB": "Splac \u2013 Product Listing Acceleration Copilot"
+        },
+        "description": {
+            "de-DE": "Beschleunigt das Listen von Produkten mit LLM-Unterst\u00fctzung: Templates, PDF-Quellen, Review und Monitoring.",
+            "en-GB": "Accelerates product listing with LLM support: templates, PDF sources, review and monitoring."
+        }
+    },
+    "authors": [
+        { "name": "Joost Groen" }
+    ]
+}

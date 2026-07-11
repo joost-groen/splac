@@ -1,0 +1,119 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <!-- Entity definitions -->
+        <service id="Splac\Core\Content\Template\TemplateDefinition">
+            <tag name="shopware.entity.definition" entity="splac_template"/>
+        </service>
+
+        <service id="Splac\Core\Content\CategoryTemplate\CategoryTemplateDefinition">
+            <tag name="shopware.entity.definition" entity="splac_category_template"/>
+        </service>
+
+        <service id="Splac\Core\Content\Process\ProcessDefinition">
+            <tag name="shopware.entity.definition" entity="splac_process"/>
+        </service>
+
+        <service id="Splac\Core\Content\ProcessSource\ProcessSourceDefinition">
+            <tag name="shopware.entity.definition" entity="splac_process_source"/>
+        </service>
+
+        <!-- LLM clients -->
+        <service id="Splac\Service\Llm\OpenAiClient">
+            <argument type="service" id="Symfony\Contracts\HttpClient\HttpClientInterface"/>
+            <tag name="splac.llm_client"/>
+        </service>
+
+        <service id="Splac\Service\Llm\AnthropicClient">
+            <argument type="service" id="Symfony\Contracts\HttpClient\HttpClientInterface"/>
+            <tag name="splac.llm_client"/>
+        </service>
+
+        <service id="Splac\Service\Llm\GeminiClient">
+            <argument type="service" id="Symfony\Contracts\HttpClient\HttpClientInterface"/>
+            <tag name="splac.llm_client"/>
+        </service>
+
+        <service id="Splac\Service\Llm\MistralClient">
+            <argument type="service" id="Symfony\Contracts\HttpClient\HttpClientInterface"/>
+            <tag name="splac.llm_client"/>
+        </service>
+
+        <service id="Splac\Service\Llm\LlmService">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="tagged_iterator" tag="splac.llm_client"/>
+        </service>
+
+        <service id="Splac\Service\Llm\PromptBuilder"/>
+
+        <!-- Services -->
+        <service id="Splac\Service\PdfTextExtractor"/>
+
+        <service id="Splac\Service\ProductNumberGenerator">
+            <argument type="service" id="product.repository"/>
+        </service>
+
+        <service id="Splac\Service\ProcessGenerator">
+            <argument type="service" id="splac_process.repository"/>
+            <argument type="service" id="property_group.repository"/>
+            <argument type="service" id="product_manufacturer.repository"/>
+            <argument type="service" id="Splac\Service\Llm\LlmService"/>
+            <argument type="service" id="Splac\Service\Llm\PromptBuilder"/>
+            <argument type="service" id="Splac\Service\ProductNumberGenerator"/>
+        </service>
+
+        <service id="Splac\Service\ProductCreator">
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="product_manufacturer.repository"/>
+            <argument type="service" id="tag.repository"/>
+            <argument type="service" id="tax.repository"/>
+            <argument type="service" id="language.repository"/>
+            <argument type="service" id="Splac\Service\ProductNumberGenerator"/>
+        </service>
+
+        <!-- Message queue handlers -->
+        <service id="Splac\MessageQueue\Handler\ExtractSourcesHandler">
+            <argument type="service" id="splac_process.repository"/>
+            <argument type="service" id="splac_process_source.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Media\File\FileLoader"/>
+            <argument type="service" id="Splac\Service\PdfTextExtractor"/>
+            <argument type="service" id="messenger.default_bus"/>
+            <tag name="messenger.message_handler"/>
+        </service>
+
+        <service id="Splac\MessageQueue\Handler\GenerateProcessHandler">
+            <argument type="service" id="splac_process.repository"/>
+            <argument type="service" id="Splac\Service\ProcessGenerator"/>
+            <tag name="messenger.message_handler"/>
+        </service>
+
+        <!-- Temporary E2E test command (development only) -->
+        <service id="Splac\Command\SplacE2eTestCommand">
+            <argument type="service" id="splac_template.repository"/>
+            <argument type="service" id="splac_process.repository"/>
+            <argument type="service" id="splac_process_source.repository"/>
+            <argument type="service" id="tax.repository"/>
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>
+            <argument type="service" id="Splac\MessageQueue\Handler\ExtractSourcesHandler"/>
+            <argument type="service" id="Splac\MessageQueue\Handler\GenerateProcessHandler"/>
+            <argument type="service" id="Splac\Service\ProductCreator"/>
+            <tag name="console.command"/>
+        </service>
+
+        <!-- API controller -->
+        <service id="Splac\Api\SplacProcessController" public="true">
+            <argument type="service" id="splac_process.repository"/>
+            <argument type="service" id="splac_process_source.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>
+            <argument type="service" id="messenger.default_bus"/>
+            <argument type="service" id="Splac\Service\ProductCreator"/>
+            <argument type="service" id="Splac\Service\ProcessGenerator"/>
+        </service>
+    </services>
+</container>

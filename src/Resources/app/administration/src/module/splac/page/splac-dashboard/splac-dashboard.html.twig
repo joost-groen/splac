@@ -1,0 +1,115 @@
+<sw-page class="splac-dashboard">
+    <template #smart-bar-header>
+        <h2>{{ $tc('splac.dashboard.title') }}</h2>
+    </template>
+
+    <template #smart-bar-actions>
+        <sw-button
+            variant="ghost"
+            size="small"
+            @click="$router.push({ name: 'splac.templates' })"
+        >
+            {{ $tc('splac.general.menuTemplates') }}
+        </sw-button>
+        <sw-button
+            variant="primary"
+            size="small"
+            @click="$router.push({ name: 'splac.wizard' })"
+        >
+            {{ $tc('splac.dashboard.newListing') }}
+        </sw-button>
+    </template>
+
+    <template #content>
+        <sw-card-view>
+            <sw-card
+                position-identifier="splac-dashboard-processes"
+                :title="$tc('splac.dashboard.processesTitle')"
+                :is-loading="isLoading && !processes"
+            >
+                <template v-if="processes && processes.length">
+                    <sw-data-grid
+                        :data-source="processes"
+                        :columns="columns"
+                        :show-selection="false"
+                        :show-actions="true"
+                        identifier="splac-process-grid"
+                    >
+                        <template #column-name="{ item }">
+                            <a class="splac-dashboard__process-link" @click="openProcess(item)">
+                                {{ item.name }}
+                            </a>
+                        </template>
+
+                        <template #column-status="{ item }">
+                            <div class="splac-dashboard__status-cell">
+                                <span class="splac-dashboard__status" :class="`splac-dashboard__status--${item.status}`">
+                                    <sw-color-badge :variant="statusVariant(item.status)" rounded></sw-color-badge>
+                                    {{ statusLabel(item.status) }}
+                                    <template v-if="item.currentStep && ['extracting', 'generating'].includes(item.status)">
+                                        – {{ $tc(`splac.steps.${item.currentStep}`) }}
+                                    </template>
+                                </span>
+                                <div
+                                    v-if="item.status === 'failed' && item.errorMessage"
+                                    class="splac-dashboard__error-message"
+                                    :title="item.errorMessage"
+                                >
+                                    {{ item.errorMessage }}
+                                </div>
+                            </div>
+                        </template>
+
+                        <template #column-createdAt="{ item }">
+                            {{ new Date(item.createdAt).toLocaleString() }}
+                        </template>
+
+                        <template #actions="{ item }">
+                            <sw-context-menu-item @click="openProcess(item)">
+                                {{ item.status === 'review' ? $tc('splac.dashboard.actionReview') : $tc('splac.dashboard.actionOpen') }}
+                            </sw-context-menu-item>
+                            <sw-context-menu-item
+                                v-if="canRetry(item)"
+                                @click="onRetry(item)"
+                            >
+                                {{ $tc('splac.dashboard.actionRetry') }}
+                            </sw-context-menu-item>
+                            <sw-context-menu-item
+                                v-if="canCancel(item)"
+                                @click="onCancel(item)"
+                            >
+                                {{ $tc('splac.dashboard.actionCancel') }}
+                            </sw-context-menu-item>
+                            <sw-context-menu-item variant="danger" @click="onDelete(item)">
+                                {{ $tc('global.default.delete') }}
+                            </sw-context-menu-item>
+                        </template>
+
+                        <template #pagination>
+                            <sw-pagination
+                                :page="page"
+                                :limit="limit"
+                                :total="total"
+                                :auto-hide="true"
+                                @page-change="onPageChange"
+                            ></sw-pagination>
+                        </template>
+                    </sw-data-grid>
+                </template>
+
+                <sw-empty-state
+                    v-else-if="!isLoading"
+                    :title="$tc('splac.dashboard.emptyTitle')"
+                    :subline="$tc('splac.dashboard.emptySubline')"
+                    :absolute="false"
+                >
+                    <template #actions>
+                        <sw-button variant="primary" @click="$router.push({ name: 'splac.wizard' })">
+                            {{ $tc('splac.dashboard.newListing') }}
+                        </sw-button>
+                    </template>
+                </sw-empty-state>
+            </sw-card>
+        </sw-card-view>
+    </template>
+</sw-page>
