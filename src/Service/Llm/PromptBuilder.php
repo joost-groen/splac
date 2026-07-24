@@ -56,11 +56,29 @@ PROMPT;
         $blocksByLocale = \is_array($templateConfig['descriptionBlocks'] ?? null)
             ? $templateConfig['descriptionBlocks']
             : [];
+        $descriptionStyle = \is_array($templateConfig['descriptionStyle'] ?? null)
+            ? $templateConfig['descriptionStyle']
+            : [];
+        $configuredBlockSpacing = $this->clampInteger(
+            $descriptionStyle['blockSpacing'] ?? null,
+            0,
+            200,
+            16
+        );
+        $blockSpacingEnabled = \is_bool($descriptionStyle['blockSpacingEnabled'] ?? null)
+            ? $descriptionStyle['blockSpacingEnabled']
+            : (\is_numeric($descriptionStyle['blockSpacing'] ?? null) && $configuredBlockSpacing > 0);
+        $blockSpacing = $blockSpacingEnabled ? $configuredBlockSpacing : 0;
+        $tableFormattingEnabled = ($descriptionStyle['tableFormattingEnabled'] ?? true) !== false;
 
         foreach ($locales as $locale) {
             $blocks = $blocksByLocale[$locale] ?? null;
             if (\is_array($blocks) && $blocks !== []) {
-                $descriptionTemplates[$locale] = $this->renderDescriptionBlocks($blocks);
+                $descriptionTemplates[$locale] = $this->renderDescriptionBlocks(
+                    $blocks,
+                    $blockSpacing,
+                    $tableFormattingEnabled,
+                );
             }
         }
 
@@ -370,9 +388,16 @@ PROMPT;
     /**
      * @param list<mixed> $blocks
      */
-    private function renderDescriptionBlocks(array $blocks): string
+    private function renderDescriptionBlocks(
+        array $blocks,
+        int $blockSpacing,
+        bool $tableFormattingEnabled,
+    ): string
     {
         $html = [];
+        $blockStyle = $blockSpacing > 0
+            ? ' style="margin-bottom: ' . $blockSpacing . 'px;"'
+            : '';
 
         foreach ($blocks as $block) {
             if (!\is_array($block)) {
@@ -390,7 +415,7 @@ PROMPT;
                     ? (string) $block['level']
                     : 'h2';
                 $value = $contentMode === 'generated' ? $content : $this->escapeHtml($content);
-                $html[] = "<{$level}>{$value}</{$level}>";
+                $html[] = "<{$level}{$blockStyle}>{$value}</{$level}>";
                 continue;
             }
 
@@ -398,17 +423,26 @@ PROMPT;
                 $value = $contentMode === 'generated'
                     ? $content
                     : str_replace(["\r\n", "\r", "\n"], '<br>', $this->escapeHtml($content));
-                $html[] = "<p>{$value}</p>";
+                $html[] = "<p{$blockStyle}>{$value}</p>";
                 continue;
             }
 
             if ($type === 'table') {
-                $html[] = $this->renderDescriptionTable($block);
+                $html[] = $this->renderDescriptionTable(
+                    $block,
+                    $blockSpacing,
+                    $tableFormattingEnabled,
+                );
                 continue;
             }
 
-            // Compatibility blocks intentionally preserve hand-authored HTML.
-            $html[] = (string) ($block['content'] ?? '');
+            // Compatibility blocks preserve their hand-authored HTML. When
+            // spacing is explicitly enabled, a separate spacer follows it.
+            $legacyHtml = (string) ($block['content'] ?? '');
+            if ($legacyHtml !== '' && $blockSpacing > 0) {
+                $legacyHtml .= "\n<div aria-hidden=\"true\" style=\"height: {$blockSpacing}px;\"></div>";
+            }
+            $html[] = $legacyHtml;
         }
 
         return implode("\n", $html);
@@ -417,9 +451,129 @@ PROMPT;
     /**
      * @param array<string, mixed> $block
      */
-    private function renderDescriptionTable(array $block): string
+    private function renderDescriptionTable(
+        array $block,
+        int $blockSpacing,
+        bool $tableFormattingEnabled,
+    ): string
     {
-        $lines = ['<table>'];
+        if (!$tableFormattingEnabled) {
+            return $this->renderUnformattedDescriptionTable($block, $blockSpacing);
+        }
+
+        $style = $this->normalizeTableStyle(
+            \is_array($block['tableStyle'] ?? null) ? $block['tableStyle'] : []
+        );
+        $rightColumnWidth = 100 - $style['leftColumnWidth'];
+        $collapse = $style['cellSpacing'] > 0 ? 'separate' : 'collapse';
+        $tableDeclarations = [
+            'width: 100%;',
+            'table-layout: fixed;',
+            'border-collapse: ' . $collapse . ';',
+            'border-spacing: ' . $style['cellSpacing'] . 'px;',
+        ];
+        if ($blockSpacing > 0) {
+            $tableDeclarations[] = 'margin-bottom: ' . $blockSpacing . 'px;';
+        }
+
+        $border = $style['borderStyle'] === 'none' || $style['borderWidth'] === 0
+            ? 'none'
+            : $style['borderWidth'] . 'px ' . $style['borderStyle'] . ' ' . $style['borderColor'];
+        $headerCellStyle = $this->cellStyleDeclarations(
+            $border,
+            $style['paddingVertical'],
+            $style['paddingHorizontal'],
+            $style['headerAlignment'],
+            $style['verticalAlignment'],
+            $style['labelBackgroundColor'],
+        );
+        $valueCellStyle = $this->cellStyleDeclarations(
+            $border,
+            $style['paddingVertical'],
+            $style['paddingHorizontal'],
+            $style['valueAlignment'],
+            $style['verticalAlignment'],
+            $style['valueBackgroundColor'],
+        );
+
+        $lines = ['<table', '    style="'];
+        foreach ($tableDeclarations as $declaration) {
+            $lines[] = '        ' . $declaration;
+        }
+        $lines[] = '    "';
+        $lines[] = '>';
+
+        $title = (string) ($block['title'] ?? '');
+        if ($title !== '') {
+            $lines[] = '    <caption style="caption-side: top; padding: 0 0 10px; text-align: left; font-weight: 600;">'
+                . $this->escapeHtml($title)
+                . '</caption>';
+        }
+        $lines[] = '    <colgroup>';
+        $lines[] = '        <col style="width: ' . $style['leftColumnWidth'] . '%;">';
+        $lines[] = '        <col style="width: ' . $rightColumnWidth . '%;">';
+        $lines[] = '    </colgroup>';
+        $lines[] = '    <tbody>';
+
+        $rows = \is_array($block['rows'] ?? null) ? $block['rows'] : [];
+        foreach ($rows as $row) {
+            if (!\is_array($row)) {
+                continue;
+            }
+
+            $label = (string) ($row['label'] ?? '');
+            if (($row['mode'] ?? 'placeholder') === 'static') {
+                $value = str_replace(
+                    ["\r\n", "\r", "\n"],
+                    '<br>',
+                    $this->escapeHtml((string) ($row['content'] ?? ''))
+                );
+            } else {
+                $placeholder = $this->normalizePlaceholder(
+                    (string) ($row['placeholder'] ?? '') ?: $label
+                );
+                $value = $placeholder !== '' ? '{{' . $placeholder . '}}' : '';
+            }
+
+            $lines[] = '        <tr>';
+            $lines[] = '            <th';
+            $lines[] = '                scope="row"';
+            $lines[] = '                style="';
+            foreach ($headerCellStyle as $declaration) {
+                $lines[] = '                    ' . $declaration;
+            }
+            $lines[] = '                "';
+            $lines[] = '            >';
+            $lines[] = '                ' . $this->escapeHtml($label);
+            $lines[] = '            </th>';
+            $lines[] = '            <td';
+            $lines[] = '                style="';
+            foreach ($valueCellStyle as $declaration) {
+                $lines[] = '                    ' . $declaration;
+            }
+            $lines[] = '                "';
+            $lines[] = '            >';
+            $lines[] = '                ' . $value;
+            $lines[] = '            </td>';
+            $lines[] = '        </tr>';
+        }
+
+        $lines[] = '    </tbody>';
+        $lines[] = '</table>';
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param array<string, mixed> $block
+     */
+    private function renderUnformattedDescriptionTable(array $block, int $blockSpacing): string
+    {
+        $tableStyle = $blockSpacing > 0
+            ? ' style="margin-bottom: ' . $blockSpacing . 'px;"'
+            : '';
+        $lines = ['<table' . $tableStyle . '>'];
+
         $title = (string) ($block['title'] ?? '');
         if ($title !== '') {
             $lines[] = '    <caption>' . $this->escapeHtml($title) . '</caption>';
@@ -456,6 +610,111 @@ PROMPT;
         $lines[] = '</table>';
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * @param array<string, mixed> $style
+     *
+     * @return array{
+     *     borderStyle: string,
+     *     borderWidth: int,
+     *     borderColor: string,
+     *     leftColumnWidth: int,
+     *     headerAlignment: string,
+     *     valueAlignment: string,
+     *     verticalAlignment: string,
+     *     paddingVertical: int,
+     *     paddingHorizontal: int,
+     *     cellSpacing: int,
+     *     labelBackgroundColor: string,
+     *     valueBackgroundColor: string
+     * }
+     */
+    private function normalizeTableStyle(array $style): array
+    {
+        $borderColor = (string) ($style['borderColor'] ?? '');
+        if (preg_match('/^#[0-9a-f]{6}$/i', $borderColor) !== 1) {
+            $borderColor = '#d9e0e8';
+        }
+
+        $labelBackgroundColor = (string) ($style['labelBackgroundColor'] ?? '');
+        if (preg_match('/^#[0-9a-f]{6}$/i', $labelBackgroundColor) !== 1) {
+            $labelBackgroundColor = '#ffffff';
+        }
+
+        $valueBackgroundColor = (string) ($style['valueBackgroundColor'] ?? '');
+        if (preg_match('/^#[0-9a-f]{6}$/i', $valueBackgroundColor) !== 1) {
+            $valueBackgroundColor = '#ffffff';
+        }
+
+        return [
+            'borderStyle' => $this->enumValue(
+                $style['borderStyle'] ?? null,
+                ['none', 'solid', 'dashed', 'dotted', 'double'],
+                'solid'
+            ),
+            'borderWidth' => $this->clampInteger($style['borderWidth'] ?? null, 0, 10, 1),
+            'borderColor' => $borderColor,
+            'leftColumnWidth' => $this->clampInteger($style['leftColumnWidth'] ?? null, 10, 90, 30),
+            'headerAlignment' => $this->enumValue(
+                $style['headerAlignment'] ?? null,
+                ['left', 'center', 'right'],
+                'left'
+            ),
+            'valueAlignment' => $this->enumValue(
+                $style['valueAlignment'] ?? null,
+                ['left', 'center', 'right'],
+                'left'
+            ),
+            'verticalAlignment' => $this->enumValue(
+                $style['verticalAlignment'] ?? null,
+                ['top', 'middle', 'bottom'],
+                'middle'
+            ),
+            'paddingVertical' => $this->clampInteger($style['paddingVertical'] ?? null, 0, 50, 10),
+            'paddingHorizontal' => $this->clampInteger($style['paddingHorizontal'] ?? null, 0, 80, 12),
+            'cellSpacing' => $this->clampInteger($style['cellSpacing'] ?? null, 0, 30, 0),
+            'labelBackgroundColor' => $labelBackgroundColor,
+            'valueBackgroundColor' => $valueBackgroundColor,
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function cellStyleDeclarations(
+        string $border,
+        int $paddingVertical,
+        int $paddingHorizontal,
+        string $horizontalAlignment,
+        string $verticalAlignment,
+        string $backgroundColor,
+    ): array {
+        return [
+            'border: ' . $border . ';',
+            'padding: ' . $paddingVertical . 'px ' . $paddingHorizontal . 'px;',
+            'text-align: ' . $horizontalAlignment . ';',
+            'vertical-align: ' . $verticalAlignment . ';',
+            'background-color: ' . $backgroundColor . ';',
+            'overflow-wrap: anywhere;',
+        ];
+    }
+
+    /**
+     * @param list<string> $allowed
+     */
+    private function enumValue(mixed $value, array $allowed, string $fallback): string
+    {
+        return \is_string($value) && \in_array($value, $allowed, true) ? $value : $fallback;
+    }
+
+    private function clampInteger(mixed $value, int $minimum, int $maximum, int $fallback): int
+    {
+        if (!\is_numeric($value)) {
+            return $fallback;
+        }
+
+        return min($maximum, max($minimum, (int) round((float) $value)));
     }
 
     /**

@@ -3,6 +3,40 @@ import './splac-template-detail.scss';
 
 const LOCALES = ['de-DE', 'en-GB'];
 const BLOCK_TYPES = ['heading', 'paragraph', 'table', 'html'];
+const BORDER_STYLES = ['none', 'solid', 'dashed', 'dotted', 'double'];
+const HORIZONTAL_ALIGNMENTS = ['left', 'center', 'right'];
+const VERTICAL_ALIGNMENTS = ['top', 'middle', 'bottom'];
+const COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
+
+const DEFAULT_TABLE_STYLE = Object.freeze({
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderColor: '#d9e0e8',
+    leftColumnWidth: 30,
+    headerAlignment: 'left',
+    valueAlignment: 'left',
+    verticalAlignment: 'middle',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    cellSpacing: 0,
+    labelBackgroundColor: '#ffffff',
+    valueBackgroundColor: '#ffffff',
+});
+
+const RECOMMENDED_TABLE_STYLE = Object.freeze({
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderColor: '#d5dce5',
+    leftColumnWidth: 34,
+    headerAlignment: 'left',
+    valueAlignment: 'left',
+    verticalAlignment: 'top',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    cellSpacing: 0,
+    labelBackgroundColor: '#f4f6f8',
+    valueBackgroundColor: '#ffffff',
+});
 
 let blockSequence = 0;
 
@@ -37,6 +71,41 @@ const createTableRow = (values = {}) => {
     };
 };
 
+const clampNumber = (value, min, max, fallback) => {
+    const number = Number(value);
+
+    return Number.isFinite(number) ? Math.min(max, Math.max(min, Math.round(number))) : fallback;
+};
+
+const createTableStyle = (values = {}) => ({
+    borderStyle: BORDER_STYLES.includes(values.borderStyle)
+        ? values.borderStyle
+        : DEFAULT_TABLE_STYLE.borderStyle,
+    borderWidth: clampNumber(values.borderWidth, 0, 10, DEFAULT_TABLE_STYLE.borderWidth),
+    borderColor: COLOR_PATTERN.test(String(values.borderColor || ''))
+        ? values.borderColor
+        : DEFAULT_TABLE_STYLE.borderColor,
+    leftColumnWidth: clampNumber(values.leftColumnWidth, 10, 90, DEFAULT_TABLE_STYLE.leftColumnWidth),
+    headerAlignment: HORIZONTAL_ALIGNMENTS.includes(values.headerAlignment)
+        ? values.headerAlignment
+        : DEFAULT_TABLE_STYLE.headerAlignment,
+    valueAlignment: HORIZONTAL_ALIGNMENTS.includes(values.valueAlignment)
+        ? values.valueAlignment
+        : DEFAULT_TABLE_STYLE.valueAlignment,
+    verticalAlignment: VERTICAL_ALIGNMENTS.includes(values.verticalAlignment)
+        ? values.verticalAlignment
+        : DEFAULT_TABLE_STYLE.verticalAlignment,
+    paddingVertical: clampNumber(values.paddingVertical, 0, 50, DEFAULT_TABLE_STYLE.paddingVertical),
+    paddingHorizontal: clampNumber(values.paddingHorizontal, 0, 80, DEFAULT_TABLE_STYLE.paddingHorizontal),
+    cellSpacing: clampNumber(values.cellSpacing, 0, 30, DEFAULT_TABLE_STYLE.cellSpacing),
+    labelBackgroundColor: COLOR_PATTERN.test(String(values.labelBackgroundColor || ''))
+        ? values.labelBackgroundColor
+        : DEFAULT_TABLE_STYLE.labelBackgroundColor,
+    valueBackgroundColor: COLOR_PATTERN.test(String(values.valueBackgroundColor || ''))
+        ? values.valueBackgroundColor
+        : DEFAULT_TABLE_STYLE.valueBackgroundColor,
+});
+
 const createBlock = (type, values = {}) => {
     const safeType = BLOCK_TYPES.includes(type) ? type : 'paragraph';
     const block = {
@@ -66,6 +135,7 @@ const createBlock = (type, values = {}) => {
             ...block,
             title: values.title || '',
             rows: Array.isArray(values.rows) ? values.rows.map((row) => createTableRow(row)) : [],
+            tableStyle: createTableStyle(values.tableStyle),
         };
     }
 
@@ -89,6 +159,12 @@ const defaultConfig = () => ({
     fieldModes: {
         metaTitle: { mode: 'instruction', 'de-DE': '', 'en-GB': '' },
         metaDescription: { mode: 'instruction', 'de-DE': '', 'en-GB': '' },
+    },
+    descriptionStyle: {
+        blockSpacingEnabled: false,
+        blockSpacing: 16,
+        tableFormattingEnabled: true,
+        recommendedTableStyleForAllTables: false,
     },
     descriptionBlocks: {},
     productNumberPattern: '',
@@ -146,6 +222,27 @@ Shopware.Component.register('splac-template-detail', {
                 { value: 'placeholder', label: this.$tc('splac.templateDetail.tableValueGenerated') },
                 { value: 'static', label: this.$tc('splac.templateDetail.tableValueStatic') },
             ];
+        },
+
+        borderStyleOptions() {
+            return BORDER_STYLES.map((value) => ({
+                value,
+                label: this.$tc(`splac.templateDetail.borderStyle.${value}`),
+            }));
+        },
+
+        horizontalAlignmentOptions() {
+            return HORIZONTAL_ALIGNMENTS.map((value) => ({
+                value,
+                label: this.$tc(`splac.templateDetail.alignment.${value}`),
+            }));
+        },
+
+        verticalAlignmentOptions() {
+            return VERTICAL_ALIGNMENTS.map((value) => ({
+                value,
+                label: this.$tc(`splac.templateDetail.verticalAlignment.${value}`),
+            }));
         },
 
         blockContentModeOptions() {
@@ -219,6 +316,18 @@ Shopware.Component.register('splac-template-detail', {
                         metaTitle: { ...merged.fieldModes.metaTitle, ...((existing.fieldModes || {}).metaTitle || {}) },
                         metaDescription: { ...merged.fieldModes.metaDescription, ...((existing.fieldModes || {}).metaDescription || {}) },
                     },
+                    descriptionStyle: {
+                        ...merged.descriptionStyle,
+                        ...(existing.descriptionStyle || {}),
+                        blockSpacingEnabled: typeof existing.descriptionStyle?.blockSpacingEnabled === 'boolean'
+                            ? existing.descriptionStyle.blockSpacingEnabled
+                            : Number(existing.descriptionStyle?.blockSpacing) > 0,
+                        blockSpacing: clampNumber(existing.descriptionStyle?.blockSpacing, 0, 200, 16),
+                        tableFormattingEnabled: existing.descriptionStyle?.tableFormattingEnabled !== false,
+                        recommendedTableStyleForAllTables: (
+                            existing.descriptionStyle?.recommendedTableStyleForAllTables === true
+                        ),
+                    },
                     descriptionBlocks,
                 };
 
@@ -277,6 +386,12 @@ Shopware.Component.register('splac-template-detail', {
         addDescriptionBlock(type) {
             const block = createBlock(type);
             if (type === 'table') {
+                const useRecommendedStyle = (
+                    this.item.config.descriptionStyle.recommendedTableStyleForAllTables === true
+                );
+                block.tableStyle = createTableStyle(
+                    useRecommendedStyle ? RECOMMENDED_TABLE_STYLE : DEFAULT_TABLE_STYLE,
+                );
                 block.rows.push(createTableRow());
             }
             this.setActiveDescriptionBlocks([...this.activeDescriptionBlocks, block]);
@@ -314,6 +429,40 @@ Shopware.Component.register('splac-template-detail', {
             block.rows.push(createTableRow());
         },
 
+        resetTableStyle(block) {
+            block.tableStyle = createTableStyle();
+        },
+
+        applyRecommendedTableStyle(block) {
+            block.tableStyle = createTableStyle(RECOMMENDED_TABLE_STYLE);
+        },
+
+        isRecommendedTableStyle(block) {
+            const style = createTableStyle(block.tableStyle);
+
+            return Object.entries(RECOMMENDED_TABLE_STYLE)
+                .every(([property, value]) => style[property] === value);
+        },
+
+        toggleRecommendedTableStyleForAllTables() {
+            const descriptionStyle = this.item.config.descriptionStyle;
+            const enabled = descriptionStyle.recommendedTableStyleForAllTables !== true;
+            descriptionStyle.recommendedTableStyleForAllTables = enabled;
+
+            if (!enabled) {
+                return;
+            }
+
+            LOCALES.forEach((locale) => {
+                const blocks = this.item?.config?.descriptionBlocks?.[locale] || [];
+                blocks.forEach((block) => {
+                    if (block.type === 'table') {
+                        this.applyRecommendedTableStyle(block);
+                    }
+                });
+            });
+        },
+
         removeTableRow(block, rowIndex) {
             block.rows.splice(rowIndex, 1);
         },
@@ -334,6 +483,7 @@ Shopware.Component.register('splac-template-detail', {
         },
 
         syncDescriptionTemplates() {
+            this.normalizeDescriptionFormatting();
             this.ensureTablePlaceholders();
 
             const templates = {};
@@ -341,6 +491,33 @@ Shopware.Component.register('splac-template-detail', {
                 templates[locale] = this.renderDescriptionLocale(locale);
             });
             this.item.descriptionTemplates = templates;
+        },
+
+        normalizeDescriptionFormatting() {
+            this.item.config.descriptionStyle.blockSpacingEnabled = (
+                this.item.config.descriptionStyle.blockSpacingEnabled === true
+            );
+            this.item.config.descriptionStyle.blockSpacing = clampNumber(
+                this.item.config.descriptionStyle.blockSpacing,
+                0,
+                200,
+                16,
+            );
+            this.item.config.descriptionStyle.tableFormattingEnabled = (
+                this.item.config.descriptionStyle.tableFormattingEnabled !== false
+            );
+            this.item.config.descriptionStyle.recommendedTableStyleForAllTables = (
+                this.item.config.descriptionStyle.recommendedTableStyleForAllTables === true
+            );
+
+            LOCALES.forEach((locale) => {
+                const blocks = this.item?.config?.descriptionBlocks?.[locale] || [];
+                blocks.forEach((block) => {
+                    if (block.type === 'table') {
+                        block.tableStyle = createTableStyle(block.tableStyle);
+                    }
+                });
+            });
         },
 
         ensureTablePlaceholders() {
@@ -362,29 +539,104 @@ Shopware.Component.register('splac-template-detail', {
 
         renderDescriptionLocale(locale) {
             const blocks = this.item?.config?.descriptionBlocks?.[locale] || [];
+            const blockSpacing = clampNumber(
+                this.item?.config?.descriptionStyle?.blockSpacing,
+                0,
+                200,
+                16,
+            );
+            const spacingEnabled = this.item?.config?.descriptionStyle?.blockSpacingEnabled === true;
+            const tableFormattingEnabled = (
+                this.item?.config?.descriptionStyle?.tableFormattingEnabled !== false
+            );
 
-            return blocks.map((block) => this.renderDescriptionBlock(block)).join('\n');
+            return blocks.map((block) => this.renderDescriptionBlock(
+                block,
+                spacingEnabled ? blockSpacing : 0,
+                tableFormattingEnabled,
+            )).join('\n');
         },
 
-        renderDescriptionBlock(block) {
+        renderDescriptionBlock(block, blockSpacing = 0, tableFormattingEnabled = true) {
             const content = block.contentMode === 'generated'
                 ? `{{${this.generatedBlockPlaceholder(block)}}}`
                 : block.content;
+            const blockStyle = blockSpacing > 0
+                ? ` style="margin-bottom: ${blockSpacing}px;"`
+                : '';
 
             if (block.type === 'heading') {
                 const level = ['h2', 'h3', 'h4'].includes(block.level) ? block.level : 'h2';
-                return `<${level}>${block.contentMode === 'generated' ? content : this.escapeHtml(content)}</${level}>`;
+                return `<${level}${blockStyle}>${block.contentMode === 'generated' ? content : this.escapeHtml(content)}</${level}>`;
             }
 
             if (block.type === 'paragraph') {
-                return `<p>${block.contentMode === 'generated'
+                return `<p${blockStyle}>${block.contentMode === 'generated'
                     ? content
                     : this.escapeHtml(content).replace(/\n/g, '<br>')}</p>`;
             }
 
             if (block.type === 'table') {
+                if (!tableFormattingEnabled) {
+                    const caption = block.title
+                        ? `\n    <caption>${this.escapeHtml(block.title)}</caption>`
+                        : '';
+                    const rows = (block.rows || []).map((row) => {
+                        const placeholder = this.normalizePlaceholder(row.placeholder || row.label);
+                        const value = row.mode === 'static'
+                            ? this.escapeHtml(row.content).replace(/\n/g, '<br>')
+                            : (placeholder ? `{{${placeholder}}}` : '');
+
+                        return [
+                            '        <tr>',
+                            `            <th scope="row">${this.escapeHtml(row.label)}</th>`,
+                            `            <td>${value}</td>`,
+                            '        </tr>',
+                        ].join('\n');
+                    }).join('\n');
+
+                    return [
+                        `<table${blockStyle}>${caption}`,
+                        '    <tbody>',
+                        rows,
+                        '    </tbody>',
+                        '</table>',
+                    ].filter((line) => line !== '').join('\n');
+                }
+
+                const tableStyle = createTableStyle(block.tableStyle);
+                const rightColumnWidth = 100 - tableStyle.leftColumnWidth;
+                const collapse = tableStyle.cellSpacing > 0 ? 'separate' : 'collapse';
+                const tableDeclarations = [
+                    'width: 100%;',
+                    'table-layout: fixed;',
+                    `border-collapse: ${collapse};`,
+                    `border-spacing: ${tableStyle.cellSpacing}px;`,
+                ];
+                if (blockSpacing > 0) {
+                    tableDeclarations.push(`margin-bottom: ${blockSpacing}px;`);
+                }
+                const border = tableStyle.borderStyle === 'none' || tableStyle.borderWidth === 0
+                    ? 'none'
+                    : `${tableStyle.borderWidth}px ${tableStyle.borderStyle} ${tableStyle.borderColor}`;
+                const headerDeclarations = [
+                    `border: ${border};`,
+                    `padding: ${tableStyle.paddingVertical}px ${tableStyle.paddingHorizontal}px;`,
+                    `text-align: ${tableStyle.headerAlignment};`,
+                    `vertical-align: ${tableStyle.verticalAlignment};`,
+                    `background-color: ${tableStyle.labelBackgroundColor};`,
+                    'overflow-wrap: anywhere;',
+                ];
+                const valueDeclarations = [
+                    `border: ${border};`,
+                    `padding: ${tableStyle.paddingVertical}px ${tableStyle.paddingHorizontal}px;`,
+                    `text-align: ${tableStyle.valueAlignment};`,
+                    `vertical-align: ${tableStyle.verticalAlignment};`,
+                    `background-color: ${tableStyle.valueBackgroundColor};`,
+                    'overflow-wrap: anywhere;',
+                ];
                 const caption = block.title
-                    ? `\n    <caption>${this.escapeHtml(block.title)}</caption>`
+                    ? `\n    <caption style="caption-side: top; padding: 0 0 10px; text-align: left; font-weight: 600;">${this.escapeHtml(block.title)}</caption>`
                     : '';
                 const rows = (block.rows || []).map((row) => {
                     const placeholder = this.normalizePlaceholder(row.placeholder || row.label);
@@ -394,14 +646,35 @@ Shopware.Component.register('splac-template-detail', {
 
                     return [
                         '        <tr>',
-                        `            <th scope="row">${this.escapeHtml(row.label)}</th>`,
-                        `            <td>${value}</td>`,
+                        '            <th',
+                        '                scope="row"',
+                        '                style="',
+                        ...headerDeclarations.map((declaration) => `                    ${declaration}`),
+                        '                "',
+                        '            >',
+                        `                ${this.escapeHtml(row.label)}`,
+                        '            </th>',
+                        '            <td',
+                        '                style="',
+                        ...valueDeclarations.map((declaration) => `                    ${declaration}`),
+                        '                "',
+                        '            >',
+                        `                ${value}`,
+                        '            </td>',
                         '        </tr>',
                     ].join('\n');
                 }).join('\n');
 
                 return [
-                    `<table>${caption}`,
+                    '<table',
+                    '    style="',
+                    ...tableDeclarations.map((declaration) => `        ${declaration}`),
+                    '    "',
+                    `>${caption}`,
+                    '    <colgroup>',
+                    `        <col style="width: ${tableStyle.leftColumnWidth}%;">`,
+                    `        <col style="width: ${rightColumnWidth}%;">`,
+                    '    </colgroup>',
                     '    <tbody>',
                     rows,
                     '    </tbody>',
@@ -409,7 +682,12 @@ Shopware.Component.register('splac-template-detail', {
                 ].filter((line) => line !== '').join('\n');
             }
 
-            return block.content || '';
+            const legacyHtml = block.content || '';
+            if (blockSpacing > 0 && legacyHtml) {
+                return `${legacyHtml}\n<div aria-hidden="true" style="height: ${blockSpacing}px;"></div>`;
+            }
+
+            return legacyHtml;
         },
 
         generatedBlockPlaceholder(block) {

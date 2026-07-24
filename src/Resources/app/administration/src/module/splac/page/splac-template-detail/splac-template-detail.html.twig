@@ -94,6 +94,154 @@
                     </button>
                 </div>
 
+                <section class="splac-template-detail__layout-panel">
+                    <header class="splac-template-detail__layout-panel-header">
+                        <strong>{{ $tc('splac.templateDetail.descriptionFormattingTitle') }}</strong>
+                        <span>{{ $tc('splac.templateDetail.descriptionFormattingHelp') }}</span>
+                    </header>
+
+                    <div class="splac-template-detail__layout-options">
+                        <article
+                            class="splac-template-detail__layout-option"
+                            :class="{ 'is--active': item.config.descriptionStyle.blockSpacingEnabled }"
+                        >
+                            <div class="splac-template-detail__layout-option-header">
+                                <div class="splac-template-detail__layout-copy">
+                                    <strong>{{ $tc('splac.templateDetail.blockSpacingTitle') }}</strong>
+                                    <span>{{ $tc('splac.templateDetail.blockSpacingHelp') }}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="splac-template-detail__setting-toggle"
+                                    :class="{ 'is--active': item.config.descriptionStyle.blockSpacingEnabled }"
+                                    :aria-label="$tc('splac.templateDetail.blockSpacingToggle')"
+                                    :aria-pressed="item.config.descriptionStyle.blockSpacingEnabled"
+                                    @click="item.config.descriptionStyle.blockSpacingEnabled = !item.config.descriptionStyle.blockSpacingEnabled"
+                                >
+                                    <span class="splac-template-detail__setting-toggle-track" aria-hidden="true">
+                                        <span class="splac-template-detail__setting-toggle-thumb"></span>
+                                    </span>
+                                    <span>
+                                        {{
+                                            item.config.descriptionStyle.blockSpacingEnabled
+                                                ? $tc('splac.templateDetail.toggleEnabled')
+                                                : $tc('splac.templateDetail.toggleDisabled')
+                                        }}
+                                    </span>
+                                </button>
+                            </div>
+                            <div
+                                v-if="item.config.descriptionStyle.blockSpacingEnabled"
+                                class="splac-template-detail__layout-control"
+                            >
+                                <div class="splac-template-detail__spacing-presets">
+                                    <button
+                                        type="button"
+                                        :class="{ 'is--active': item.config.descriptionStyle.blockSpacing === 8 }"
+                                        @click="item.config.descriptionStyle.blockSpacing = 8"
+                                    >
+                                        {{ $tc('splac.templateDetail.spacingCompact') }}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        :class="{ 'is--active': item.config.descriptionStyle.blockSpacing === 16 }"
+                                        @click="item.config.descriptionStyle.blockSpacing = 16"
+                                    >
+                                        {{ $tc('splac.templateDetail.spacingComfortable') }}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        :class="{ 'is--active': item.config.descriptionStyle.blockSpacing === 32 }"
+                                        @click="item.config.descriptionStyle.blockSpacing = 32"
+                                    >
+                                        {{ $tc('splac.templateDetail.spacingSpacious') }}
+                                    </button>
+                                </div>
+                                <label class="splac-template-detail__spacing-exact">
+                                    <span>{{ $tc('splac.templateDetail.blockSpacingExact') }}</span>
+                                    <span class="splac-template-detail__spacing-input">
+                                        <input
+                                            v-model.number="item.config.descriptionStyle.blockSpacing"
+                                            type="number"
+                                            min="0"
+                                            max="200"
+                                            step="1"
+                                        >
+                                        <span>px</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </article>
+
+                        <article
+                            class="splac-template-detail__layout-option"
+                            :class="{ 'is--active': item.config.descriptionStyle.tableFormattingEnabled }"
+                        >
+                            <div class="splac-template-detail__layout-option-header">
+                                <div class="splac-template-detail__layout-copy">
+                                    <strong>{{ $tc('splac.templateDetail.tableFormattingToggleTitle') }}</strong>
+                                    <span>{{ $tc('splac.templateDetail.tableFormattingToggleHelp') }}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="splac-template-detail__setting-toggle"
+                                    :class="{ 'is--active': item.config.descriptionStyle.tableFormattingEnabled }"
+                                    :aria-label="$tc('splac.templateDetail.tableFormattingToggle')"
+                                    :aria-pressed="item.config.descriptionStyle.tableFormattingEnabled"
+                                    @click="item.config.descriptionStyle.tableFormattingEnabled = !item.config.descriptionStyle.tableFormattingEnabled"
+                                >
+                                    <span class="splac-template-detail__setting-toggle-track" aria-hidden="true">
+                                        <span class="splac-template-detail__setting-toggle-thumb"></span>
+                                    </span>
+                                    <span>
+                                        {{
+                                            item.config.descriptionStyle.tableFormattingEnabled
+                                                ? $tc('splac.templateDetail.toggleEnabled')
+                                                : $tc('splac.templateDetail.toggleDisabled')
+                                        }}
+                                    </span>
+                                </button>
+                            </div>
+                            <div
+                                v-if="item.config.descriptionStyle.tableFormattingEnabled"
+                                class="splac-template-detail__layout-status"
+                            >
+                                <span aria-hidden="true">✓</span>
+                                <span>{{ $tc('splac.templateDetail.tableFormattingEnabledHint') }}</span>
+                            </div>
+                            <button
+                                v-if="item.config.descriptionStyle.tableFormattingEnabled"
+                                type="button"
+                                class="splac-template-detail__global-table-style"
+                                :class="{
+                                    'is--active': item.config.descriptionStyle.recommendedTableStyleForAllTables
+                                }"
+                                :aria-pressed="item.config.descriptionStyle.recommendedTableStyleForAllTables"
+                                @click="toggleRecommendedTableStyleForAllTables"
+                            >
+                                <span class="splac-template-detail__global-table-style-icon" aria-hidden="true">
+                                    {{
+                                        item.config.descriptionStyle.recommendedTableStyleForAllTables
+                                            ? '✓'
+                                            : '✦'
+                                    }}
+                                </span>
+                                <span class="splac-template-detail__global-table-style-copy">
+                                    <strong>{{ $tc('splac.templateDetail.tablePresetApplyAllTitle') }}</strong>
+                                    <small>{{ $tc('splac.templateDetail.tablePresetApplyAllHelp') }}</small>
+                                </span>
+                                <span class="splac-template-detail__global-table-style-action">
+                                    {{
+                                        item.config.descriptionStyle.recommendedTableStyleForAllTables
+                                            ? $tc('splac.templateDetail.tablePresetDefaultActive')
+                                            : $tc('splac.templateDetail.tablePresetApplyAll')
+                                    }}
+                                </span>
+                            </button>
+                        </article>
+                    </div>
+                </section>
+
                 <div class="splac-template-detail__block-library">
                     <div>
                         <strong>{{ $tc('splac.templateDetail.addBlock') }}</strong>
@@ -229,6 +377,235 @@
                                     :label="$tc('splac.templateDetail.tableTitle')"
                                     :placeholder="$tc('splac.templateDetail.tableTitlePlaceholder')"
                                 ></sw-text-field>
+
+                                <section
+                                    v-if="item.config.descriptionStyle.tableFormattingEnabled"
+                                    class="splac-template-detail__format-preset"
+                                >
+                                    <header>
+                                        <strong>{{ $tc('splac.templateDetail.tablePresetTitle') }}</strong>
+                                        <span>{{ $tc('splac.templateDetail.tablePresetHelp') }}</span>
+                                    </header>
+                                    <button
+                                        type="button"
+                                        class="splac-template-detail__preset-card"
+                                        :class="{ 'is--active': isRecommendedTableStyle(block) }"
+                                        :aria-pressed="isRecommendedTableStyle(block)"
+                                        @click="applyRecommendedTableStyle(block)"
+                                    >
+                                        <span class="splac-template-detail__preset-copy">
+                                            <span class="splac-template-detail__preset-heading">
+                                                <strong>{{ $tc('splac.templateDetail.tablePresetRecommendedName') }}</strong>
+                                                <small>{{ $tc('splac.templateDetail.tablePresetRecommendedBadge') }}</small>
+                                            </span>
+                                            <span class="splac-template-detail__preset-description">
+                                                {{ $tc('splac.templateDetail.tablePresetRecommendedHelp') }}
+                                            </span>
+                                            <span class="splac-template-detail__preset-properties">
+                                                <small>34 / 66</small>
+                                                <small>12 × 16 px</small>
+                                                <small>{{ $tc('splac.templateDetail.tablePresetSubtleBorders') }}</small>
+                                            </span>
+                                        </span>
+                                        <span class="splac-template-detail__preset-preview" aria-hidden="true">
+                                            <span>
+                                                <i></i>
+                                                <i></i>
+                                            </span>
+                                            <span>
+                                                <i></i>
+                                                <i></i>
+                                            </span>
+                                            <span>
+                                                <i></i>
+                                                <i></i>
+                                            </span>
+                                        </span>
+                                        <span class="splac-template-detail__preset-action">
+                                            {{
+                                                isRecommendedTableStyle(block)
+                                                    ? $tc('splac.templateDetail.tablePresetApplied')
+                                                    : $tc('splac.templateDetail.tablePresetApply')
+                                            }}
+                                        </span>
+                                    </button>
+                                </section>
+
+                                <details
+                                    v-if="item.config.descriptionStyle.tableFormattingEnabled"
+                                    class="splac-template-detail__table-format"
+                                >
+                                    <summary>
+                                        <span>
+                                            <strong>{{ $tc('splac.templateDetail.tableFormatting') }}</strong>
+                                            <small>{{ $tc('splac.templateDetail.tableFormattingSummary') }}</small>
+                                        </span>
+                                    </summary>
+
+                                    <div class="splac-template-detail__table-format-body">
+                                        <section class="splac-template-detail__format-group">
+                                            <header>
+                                                <strong>{{ $tc('splac.templateDetail.tableBorders') }}</strong>
+                                                <span>{{ $tc('splac.templateDetail.tableBordersHelp') }}</span>
+                                            </header>
+                                            <div class="splac-template-detail__format-grid splac-template-detail__format-grid--three">
+                                                <sw-select-field
+                                                    v-model="block.tableStyle.borderStyle"
+                                                    :label="$tc('splac.templateDetail.tableBorderStyle')"
+                                                    :options="borderStyleOptions"
+                                                ></sw-select-field>
+                                                <sw-number-field
+                                                    v-model:value="block.tableStyle.borderWidth"
+                                                    :label="$tc('splac.templateDetail.tableBorderWidth')"
+                                                    :disabled="block.tableStyle.borderStyle === 'none'"
+                                                    :min="0"
+                                                    :max="10"
+                                                    :digits="0"
+                                                ></sw-number-field>
+                                                <label class="splac-template-detail__color-field">
+                                                    <span>{{ $tc('splac.templateDetail.tableBorderColor') }}</span>
+                                                    <span class="splac-template-detail__color-control">
+                                                        <input
+                                                            v-model="block.tableStyle.borderColor"
+                                                            type="color"
+                                                        >
+                                                        <code>{{ block.tableStyle.borderColor }}</code>
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        </section>
+
+                                        <section class="splac-template-detail__format-group">
+                                            <header>
+                                                <strong>{{ $tc('splac.templateDetail.tableCellColours') }}</strong>
+                                                <span>{{ $tc('splac.templateDetail.tableCellColoursHelp') }}</span>
+                                            </header>
+                                            <div class="splac-template-detail__format-grid splac-template-detail__format-grid--two">
+                                                <label class="splac-template-detail__color-field">
+                                                    <span>{{ $tc('splac.templateDetail.tableLabelBackground') }}</span>
+                                                    <span class="splac-template-detail__color-control">
+                                                        <input
+                                                            v-model="block.tableStyle.labelBackgroundColor"
+                                                            type="color"
+                                                        >
+                                                        <code>{{ block.tableStyle.labelBackgroundColor }}</code>
+                                                    </span>
+                                                </label>
+                                                <label class="splac-template-detail__color-field">
+                                                    <span>{{ $tc('splac.templateDetail.tableValueBackground') }}</span>
+                                                    <span class="splac-template-detail__color-control">
+                                                        <input
+                                                            v-model="block.tableStyle.valueBackgroundColor"
+                                                            type="color"
+                                                        >
+                                                        <code>{{ block.tableStyle.valueBackgroundColor }}</code>
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        </section>
+
+                                        <section class="splac-template-detail__format-group">
+                                            <header>
+                                                <strong>{{ $tc('splac.templateDetail.tableColumnWidths') }}</strong>
+                                                <span>{{ $tc('splac.templateDetail.tableColumnWidthsHelp') }}</span>
+                                            </header>
+                                            <div class="splac-template-detail__column-layout">
+                                                <sw-number-field
+                                                    v-model:value="block.tableStyle.leftColumnWidth"
+                                                    :label="$tc('splac.templateDetail.tableLeftColumnWidth')"
+                                                    :min="10"
+                                                    :max="90"
+                                                    :digits="0"
+                                                ></sw-number-field>
+                                                <div class="splac-template-detail__column-ratio-field">
+                                                    <span class="splac-template-detail__column-ratio-label">
+                                                        {{ $tc('splac.templateDetail.tableColumnPreview') }}
+                                                    </span>
+                                                    <div class="splac-template-detail__column-ratio">
+                                                        <span
+                                                            class="splac-template-detail__column-ratio-left"
+                                                            :style="{ width: `${block.tableStyle.leftColumnWidth}%` }"
+                                                        >
+                                                            {{ block.tableStyle.leftColumnWidth }}%
+                                                        </span>
+                                                        <span
+                                                            class="splac-template-detail__column-ratio-right"
+                                                            :style="{ width: `${100 - block.tableStyle.leftColumnWidth}%` }"
+                                                        >
+                                                            {{ 100 - block.tableStyle.leftColumnWidth }}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        <section class="splac-template-detail__format-group">
+                                            <header>
+                                                <strong>{{ $tc('splac.templateDetail.tableAlignment') }}</strong>
+                                                <span>{{ $tc('splac.templateDetail.tableAlignmentHelp') }}</span>
+                                            </header>
+                                            <div class="splac-template-detail__format-grid splac-template-detail__format-grid--three">
+                                                <sw-select-field
+                                                    v-model="block.tableStyle.headerAlignment"
+                                                    :label="$tc('splac.templateDetail.tableHeaderAlignment')"
+                                                    :options="horizontalAlignmentOptions"
+                                                ></sw-select-field>
+                                                <sw-select-field
+                                                    v-model="block.tableStyle.valueAlignment"
+                                                    :label="$tc('splac.templateDetail.tableValueAlignment')"
+                                                    :options="horizontalAlignmentOptions"
+                                                ></sw-select-field>
+                                                <sw-select-field
+                                                    v-model="block.tableStyle.verticalAlignment"
+                                                    :label="$tc('splac.templateDetail.tableVerticalAlignment')"
+                                                    :options="verticalAlignmentOptions"
+                                                ></sw-select-field>
+                                            </div>
+                                        </section>
+
+                                        <section class="splac-template-detail__format-group">
+                                            <header>
+                                                <strong>{{ $tc('splac.templateDetail.tableSpacing') }}</strong>
+                                                <span>{{ $tc('splac.templateDetail.tableSpacingHelp') }}</span>
+                                            </header>
+                                            <div class="splac-template-detail__format-grid splac-template-detail__format-grid--three">
+                                                <sw-number-field
+                                                    v-model:value="block.tableStyle.paddingVertical"
+                                                    :label="$tc('splac.templateDetail.tablePaddingVertical')"
+                                                    :min="0"
+                                                    :max="50"
+                                                    :digits="0"
+                                                ></sw-number-field>
+                                                <sw-number-field
+                                                    v-model:value="block.tableStyle.paddingHorizontal"
+                                                    :label="$tc('splac.templateDetail.tablePaddingHorizontal')"
+                                                    :min="0"
+                                                    :max="80"
+                                                    :digits="0"
+                                                ></sw-number-field>
+                                                <sw-number-field
+                                                    v-model:value="block.tableStyle.cellSpacing"
+                                                    :label="$tc('splac.templateDetail.tableCellSpacing')"
+                                                    :min="0"
+                                                    :max="30"
+                                                    :digits="0"
+                                                ></sw-number-field>
+                                            </div>
+                                        </section>
+
+                                        <div class="splac-template-detail__format-footer">
+                                            <sw-button size="small" @click="resetTableStyle(block)">
+                                                {{ $tc('splac.templateDetail.tableResetFormatting') }}
+                                            </sw-button>
+                                        </div>
+                                    </div>
+                                </details>
+                                <div
+                                    v-else
+                                    class="splac-template-detail__table-format-disabled"
+                                >
+                                    {{ $tc('splac.templateDetail.tableFormattingDisabledHint') }}
+                                </div>
 
                                 <div class="splac-template-detail__table-rows">
                                     <div
