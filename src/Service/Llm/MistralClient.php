@@ -16,7 +16,23 @@ class MistralClient implements LlmClientInterface
         return 'mistral';
     }
 
-    public function complete(string $apiKey, string $model, string $systemPrompt, string $userPrompt): LlmResponse
+    public function supportsReasoning(): bool
+    {
+        return false;
+    }
+
+    public function supportsBatchProcessing(): bool
+    {
+        return false;
+    }
+
+    public function complete(
+        string $apiKey,
+        string $model,
+        string $systemPrompt,
+        string $userPrompt,
+        CompletionOptions $options,
+    ): LlmResponse
     {
         try {
             $response = $this->httpClient->request('POST', 'https://api.mistral.ai/v1/chat/completions', [

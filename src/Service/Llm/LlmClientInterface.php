@@ -18,13 +18,23 @@ PROMPT;
      */
     public function getName(): string;
 
+    public function supportsReasoning(): bool;
+
+    public function supportsBatchProcessing(): bool;
+
     /**
      * Sends a chat completion request and returns its text and provider-reported usage.
      * Implementations should request JSON output from the provider where supported.
      *
      * @throws LlmException
      */
-    public function complete(string $apiKey, string $model, string $systemPrompt, string $userPrompt): LlmResponse;
+    public function complete(
+        string $apiKey,
+        string $model,
+        string $systemPrompt,
+        string $userPrompt,
+        CompletionOptions $options,
+    ): LlmResponse;
 
     /**
      * Sends raw PDF bytes directly to the provider and returns its OCR/document transcription.

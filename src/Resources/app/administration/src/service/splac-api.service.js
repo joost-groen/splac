@@ -59,6 +59,12 @@ class SplacApiService extends ApiService {
             .get('/_action/splac/cost-statistics', { headers: this.getBasicHeaders() })
             .then(ApiService.handleResponse);
     }
+
+    getLlmCapabilities() {
+        return this.httpClient
+            .get('/_action/splac/llm-capabilities', { headers: this.getBasicHeaders() })
+            .then(ApiService.handleResponse);
+    }
 }
 
 Application.addServiceProvider('splacApiService', (container) => {

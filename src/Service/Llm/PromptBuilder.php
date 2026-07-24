@@ -17,19 +17,30 @@ class PromptBuilder
     public function buildSystemPrompt(): string
     {
         return <<<'PROMPT'
-You are Splac, an assistant that prepares product listings for a Shopware online shop.
+You are Splac, a meticulous e-commerce editor that prepares trustworthy, easy-to-scan product listings for a Shopware online shop.
 
-STRICT RULES:
-- Only use facts that are explicitly present in the provided source documents or user inputs.
-- Never invent, guess or extrapolate technical specifications, identifiers or facts.
-- If a piece of information cannot be found in the sources, return an empty string "" (or an empty array) for that field.
-- Always answer with a single valid JSON object and nothing else. No markdown, no explanations.
+SOURCE GROUNDING:
+- Treat the supplied source documents and explicit user inputs as the only factual authority for this exact product.
+- Never invent, guess, merge variants, or extrapolate specifications, compatibility, certifications, identifiers, included items, or performance claims.
+- You may turn a supported feature into its direct, conservative customer benefit, but do not promise an outcome that the sources do not support.
+- When sources are incomplete or conflicting, prefer an empty value over an uncertain claim. Do not silently resolve ambiguity.
+- Use an empty string "" or empty array for missing factual data unless the task explicitly asks you to create a proposed value or grounded marketing copy.
+
+EDITORIAL QUALITY:
+- Write concise, specific, natural copy in the requested locale. Preserve product names, trademarks, identifiers, and units accurately.
+- Prioritize useful information and concrete customer value. Avoid filler, repetition, keyword stuffing, hype, and unsupported superlatives.
+- Keep technical detail in the field intended for it; do not repeat the same information across prose, tables, and metadata unless the task requires it.
+
+OUTPUT CONTRACT:
+- Follow the task-specific schema and instructions exactly.
+- Return one valid JSON object and nothing else: no markdown fences, commentary, or additional keys.
+- Properly JSON-escape quotation marks, backslashes, control characters, and line breaks inside string values.
 PROMPT;
     }
 
     /**
-     * Adds generated table placeholders that were omitted by older versions
-     * of the administration template editor.
+     * Rebuilds configured description blocks as semantic, readable HTML.
+     * Legacy raw-HTML templates remain unchanged.
      *
      * @param array<string, string> $descriptionTemplates
      * @param array<string, mixed> $templateConfig
@@ -47,41 +58,10 @@ PROMPT;
             : [];
 
         foreach ($locales as $locale) {
-            $html = $descriptionTemplates[$locale] ?? null;
             $blocks = $blocksByLocale[$locale] ?? null;
-            if (!\is_string($html) || !\is_array($blocks)) {
-                continue;
+            if (\is_array($blocks) && $blocks !== []) {
+                $descriptionTemplates[$locale] = $this->renderDescriptionBlocks($blocks);
             }
-
-            foreach ($blocks as $block) {
-                if (!\is_array($block) || ($block['type'] ?? null) !== 'table') {
-                    continue;
-                }
-
-                $rows = \is_array($block['rows'] ?? null) ? $block['rows'] : [];
-                foreach ($rows as $row) {
-                    if (!\is_array($row) || ($row['mode'] ?? 'placeholder') === 'static') {
-                        continue;
-                    }
-
-                    $label = trim((string) ($row['label'] ?? ''));
-                    $placeholder = $this->normalizePlaceholder(
-                        (string) ($row['placeholder'] ?? '') ?: $label
-                    );
-                    if ($label === '' || $placeholder === '') {
-                        continue;
-                    }
-
-                    $escapedLabel = htmlspecialchars($label, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8');
-                    $emptyRow = "<tr><th>{$escapedLabel}</th><td></td></tr>";
-                    $generatedRow = "<tr><th>{$escapedLabel}</th><td>{{"
-                        . $placeholder
-                        . '}}</td></tr>';
-                    $html = str_replace($emptyRow, $generatedRow, $html);
-                }
-            }
-
-            $descriptionTemplates[$locale] = $html;
         }
 
         return $descriptionTemplates;
@@ -111,7 +91,7 @@ PROMPT;
         $templatesJson = json_encode($filteredTemplates, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
         $generatedBlocksJson = json_encode($this->filterLocales($generatedBlocks, $locales), \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
         $generatedBlockRules = $generatedBlocks !== []
-            ? "\nSome placeholders represent complete generated blocks. For those placeholders, write the complete block content according to its instruction. Do not include the surrounding heading or paragraph HTML tag; it is already present in the template:\n{$generatedBlocksJson}\n"
+            ? "\nSome placeholders represent complete generated blocks. Follow each block's instruction while also applying the content rules below. A heading value must be plain text. A paragraph value may use the allowed inner HTML, but must not include its surrounding heading or paragraph tag because that tag already exists in the template:\n{$generatedBlocksJson}\n"
             : '';
         $placeholderList = implode(', ', $placeholders);
         $localeList = $this->describeLocales($locales);
@@ -130,11 +110,21 @@ The description templates per language (JSON, locale => HTML). Everything that i
 
 Placeholders to fill: {$placeholderList}
 
+CONTENT RULES:
+- Treat specification tables as the quick-reference source of truth for exact product data.
+- Table-cell placeholders must be compact and scannable: normally only the value, unit, and a short qualifier. Do not repeat the row label, write full sentences, add sales language, or combine unrelated specifications.
+- Use plain text for a single table value. Use <br> for two closely related values, or <ul><li>...</li></ul> only when three or more distinct items genuinely benefit from a list. Never return a nested <table>.
+- Descriptive headings and paragraphs must focus on what makes the product distinctive, its practical advantages, and the result or experience a customer can expect from using it.
+- By default, keep exact specifications (measurements, capacities, model-number lists, clock rates, resolutions, standards, and similar catalogue data) out of descriptive prose when a table placeholder covers them. Mention a feature category only when needed to explain a customer benefit.
+- Do not turn the description into a prose version of the table. Avoid repeated claims, generic introductions, empty praise, and unsupported superlatives.
+- Prefer short paragraphs with one clear idea each. Use <strong> sparingly for a genuinely useful scan point and <ul><li>...</li></ul> for three or more parallel benefits; do not add presentational styling, classes, or attributes.
+- Keep all HTML semantic and minimal. Allowed placeholder HTML is <br>, <strong>, <em>, <ul>, <ol>, and <li>. Do not include document wrappers, scripts, styles, headings, paragraphs, or tables inside placeholder values.
+- A specific template block instruction or additional user instruction may request a different emphasis or exact detail, but it never permits unsupported facts.
+
 Return a JSON object of this shape:
 {"placeholders": {"<locale>": {"<placeholder>": "<value>"}}}
 
 Fill the values in the correct language for each locale ({$localeList}).
-Placeholder values may contain simple inline HTML (e.g. <br>, <strong>) when appropriate for table cells or paragraphs.
 If a placeholder's information is not present in the sources, use an empty string.
 
 SOURCE DOCUMENTS:
@@ -375,6 +365,112 @@ PROMPT;
         $value = preg_replace('/\s+/', '_', $value) ?? $value;
 
         return preg_replace('/[^a-zA-Z0-9_.-]/', '', $value) ?? '';
+    }
+
+    /**
+     * @param list<mixed> $blocks
+     */
+    private function renderDescriptionBlocks(array $blocks): string
+    {
+        $html = [];
+
+        foreach ($blocks as $block) {
+            if (!\is_array($block)) {
+                continue;
+            }
+
+            $type = (string) ($block['type'] ?? 'paragraph');
+            $contentMode = (string) ($block['contentMode'] ?? 'static');
+            $content = $contentMode === 'generated'
+                ? '{{' . $this->generatedBlockPlaceholder($block) . '}}'
+                : (string) ($block['content'] ?? '');
+
+            if ($type === 'heading') {
+                $level = \in_array($block['level'] ?? null, ['h2', 'h3', 'h4'], true)
+                    ? (string) $block['level']
+                    : 'h2';
+                $value = $contentMode === 'generated' ? $content : $this->escapeHtml($content);
+                $html[] = "<{$level}>{$value}</{$level}>";
+                continue;
+            }
+
+            if ($type === 'paragraph') {
+                $value = $contentMode === 'generated'
+                    ? $content
+                    : str_replace(["\r\n", "\r", "\n"], '<br>', $this->escapeHtml($content));
+                $html[] = "<p>{$value}</p>";
+                continue;
+            }
+
+            if ($type === 'table') {
+                $html[] = $this->renderDescriptionTable($block);
+                continue;
+            }
+
+            // Compatibility blocks intentionally preserve hand-authored HTML.
+            $html[] = (string) ($block['content'] ?? '');
+        }
+
+        return implode("\n", $html);
+    }
+
+    /**
+     * @param array<string, mixed> $block
+     */
+    private function renderDescriptionTable(array $block): string
+    {
+        $lines = ['<table>'];
+        $title = (string) ($block['title'] ?? '');
+        if ($title !== '') {
+            $lines[] = '    <caption>' . $this->escapeHtml($title) . '</caption>';
+        }
+        $lines[] = '    <tbody>';
+
+        $rows = \is_array($block['rows'] ?? null) ? $block['rows'] : [];
+        foreach ($rows as $row) {
+            if (!\is_array($row)) {
+                continue;
+            }
+
+            $label = (string) ($row['label'] ?? '');
+            if (($row['mode'] ?? 'placeholder') === 'static') {
+                $value = str_replace(
+                    ["\r\n", "\r", "\n"],
+                    '<br>',
+                    $this->escapeHtml((string) ($row['content'] ?? ''))
+                );
+            } else {
+                $placeholder = $this->normalizePlaceholder(
+                    (string) ($row['placeholder'] ?? '') ?: $label
+                );
+                $value = $placeholder !== '' ? '{{' . $placeholder . '}}' : '';
+            }
+
+            $lines[] = '        <tr>';
+            $lines[] = '            <th scope="row">' . $this->escapeHtml($label) . '</th>';
+            $lines[] = '            <td>' . $value . '</td>';
+            $lines[] = '        </tr>';
+        }
+
+        $lines[] = '    </tbody>';
+        $lines[] = '</table>';
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param array<string, mixed> $block
+     */
+    private function generatedBlockPlaceholder(array $block): string
+    {
+        $id = preg_replace('/[^a-zA-Z0-9_.-]/', '_', (string) ($block['id'] ?? '')) ?? '';
+
+        return 'splac_block_' . $id;
+    }
+
+    private function escapeHtml(string $value): string
+    {
+        return htmlspecialchars($value, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8');
     }
 
     /**

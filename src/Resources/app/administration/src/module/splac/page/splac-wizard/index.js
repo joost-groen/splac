@@ -18,6 +18,11 @@ Shopware.Component.register('splac-wizard', {
             files: [],
             isDragging: false,
             isStarting: false,
+            llmCapabilities: {
+                provider: '',
+                reasoning: false,
+                batchProcessing: false,
+            },
             input: {
                 language: null,
                 productName: '',
@@ -31,6 +36,9 @@ Shopware.Component.register('splac-wizard', {
                 descriptionInstruction: '',
                 seoInstruction: '',
                 advancedPrices: [],
+                reasoningEnabled: false,
+                reasoningLevel: 'medium',
+                batchProcessing: false,
             },
             categoryTemplateId: null,
         };
@@ -93,10 +101,29 @@ Shopware.Component.register('splac-wizard', {
                 label: this.localeLabel(locale),
             }));
         },
+
+        reasoningLevelOptions() {
+            return ['low', 'medium', 'high'].map((value) => ({
+                value,
+                label: this.$tc(`splac.wizard.reasoningLevel${value.charAt(0).toUpperCase()}${value.slice(1)}`),
+            }));
+        },
+
+        providerLabel() {
+            const labels = {
+                openai: 'OpenAI',
+                anthropic: 'Anthropic',
+                gemini: 'Google Gemini',
+                mistral: 'Mistral',
+            };
+
+            return labels[this.llmCapabilities.provider] || this.llmCapabilities.provider;
+        },
     },
 
     created() {
         this.loadTemplates();
+        this.loadLlmCapabilities();
     },
 
     methods: {
@@ -106,6 +133,14 @@ Shopware.Component.register('splac-wizard', {
             criteria.addSorting(Criteria.sort('name', 'ASC'));
 
             this.templates = await this.templateRepository.search(criteria, Shopware.Context.api);
+        },
+
+        async loadLlmCapabilities() {
+            try {
+                this.llmCapabilities = await this.splacApiService.getLlmCapabilities();
+            } catch {
+                // Keep both optional features disabled when capability discovery fails.
+            }
         },
 
         selectTemplate(templateId) {

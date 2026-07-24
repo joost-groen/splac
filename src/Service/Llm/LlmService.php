@@ -42,14 +42,31 @@ class LlmService
         string $userPrompt,
         ?string $processId = null,
         string $operation = 'generation',
+        ?CompletionOptions $options = null,
     ): array
     {
         [$client, $apiKey, $model, $provider] = $this->configuredClient();
+        $options = ($options ?? new CompletionOptions())->withoutUnsupportedFeatures($client);
 
-        $response = $client->complete($apiKey, $model, $systemPrompt, $userPrompt);
+        $response = $client->complete($apiKey, $model, $systemPrompt, $userPrompt, $options);
         $this->usageService->record($processId, $provider, $model, $operation, $response);
 
         return $this->decodeJson($response->text);
+    }
+
+    /**
+     * @return array{provider: string, reasoning: bool, batchProcessing: bool}
+     */
+    public function capabilities(): array
+    {
+        $provider = $this->configuredProvider();
+        $client = $this->clients[$provider] ?? null;
+
+        return [
+            'provider' => $provider,
+            'reasoning' => $client?->supportsReasoning() ?? false,
+            'batchProcessing' => $client?->supportsBatchProcessing() ?? false,
+        ];
     }
 
     /**
@@ -79,7 +96,7 @@ class LlmService
      */
     private function configuredClient(): array
     {
-        $provider = (string) ($this->systemConfig->get(self::CONFIG_PREFIX . 'provider') ?? 'openai');
+        $provider = $this->configuredProvider();
 
         $client = $this->clients[$provider] ?? null;
         if ($client === null) {
@@ -97,6 +114,11 @@ class LlmService
         }
 
         return [$client, $apiKey, $model, $provider];
+    }
+
+    private function configuredProvider(): string
+    {
+        return (string) ($this->systemConfig->get(self::CONFIG_PREFIX . 'provider') ?? 'openai');
     }
 
     /**

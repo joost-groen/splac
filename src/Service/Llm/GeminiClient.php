@@ -20,7 +20,23 @@ class GeminiClient implements LlmClientInterface
         return 'gemini';
     }
 
-    public function complete(string $apiKey, string $model, string $systemPrompt, string $userPrompt): LlmResponse
+    public function supportsReasoning(): bool
+    {
+        return false;
+    }
+
+    public function supportsBatchProcessing(): bool
+    {
+        return false;
+    }
+
+    public function complete(
+        string $apiKey,
+        string $model,
+        string $systemPrompt,
+        string $userPrompt,
+        CompletionOptions $options,
+    ): LlmResponse
     {
         $url = \sprintf(
             'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',

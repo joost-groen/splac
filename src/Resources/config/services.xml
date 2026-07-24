@@ -96,6 +96,7 @@
         <service id="Splac\MessageQueue\Handler\GenerateProcessHandler">
             <argument type="service" id="splac_process.repository"/>
             <argument type="service" id="Splac\Service\ProcessGenerator"/>
+            <argument type="service" id="messenger.default_bus"/>
             <tag name="messenger.message_handler"/>
         </service>
 
@@ -123,6 +124,7 @@
             <argument type="service" id="Splac\Service\ProductCreator"/>
             <argument type="service" id="Splac\Service\ProcessGenerator"/>
             <argument type="service" id="Splac\Service\Llm\LlmUsageService"/>
+            <argument type="service" id="Splac\Service\Llm\LlmService"/>
         </service>
     </services>
 </container>

@@ -383,8 +383,8 @@ Shopware.Component.register('splac-template-detail', {
             }
 
             if (block.type === 'table') {
-                const title = block.title
-                    ? `<h3>${this.escapeHtml(block.title)}</h3>\n`
+                const caption = block.title
+                    ? `\n    <caption>${this.escapeHtml(block.title)}</caption>`
                     : '';
                 const rows = (block.rows || []).map((row) => {
                     const placeholder = this.normalizePlaceholder(row.placeholder || row.label);
@@ -392,10 +392,21 @@ Shopware.Component.register('splac-template-detail', {
                         ? this.escapeHtml(row.content).replace(/\n/g, '<br>')
                         : (placeholder ? `{{${placeholder}}}` : '');
 
-                    return `<tr><th>${this.escapeHtml(row.label)}</th><td>${value}</td></tr>`;
-                }).join('');
+                    return [
+                        '        <tr>',
+                        `            <th scope="row">${this.escapeHtml(row.label)}</th>`,
+                        `            <td>${value}</td>`,
+                        '        </tr>',
+                    ].join('\n');
+                }).join('\n');
 
-                return `${title}<table><tbody>${rows}</tbody></table>`;
+                return [
+                    `<table>${caption}`,
+                    '    <tbody>',
+                    rows,
+                    '    </tbody>',
+                    '</table>',
+                ].filter((line) => line !== '').join('\n');
             }
 
             return block.content || '';

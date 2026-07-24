@@ -9,6 +9,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Splac\Core\Content\Process\ProcessEntity;
 use Splac\Core\Content\ProcessSource\ProcessSourceDefinition;
 use Splac\Core\Content\Template\TemplateEntity;
+use Splac\Service\Llm\CompletionOptions;
 use Splac\Service\Llm\LlmService;
 use Splac\Service\Llm\PromptBuilder;
 
@@ -66,7 +67,13 @@ class ProcessGenerator
     /**
      * Executes one step and persists the merged output.
      */
-    public function runStep(ProcessEntity $process, string $step, Context $context): void
+    public function runStep(
+        ProcessEntity $process,
+        string $step,
+        Context $context,
+        ?string $batchId = null,
+        bool $forceAdaptiveThinking = false,
+    ): void
     {
         $template = $process->getTemplate();
         if ($template === null) {
@@ -78,13 +85,14 @@ class ProcessGenerator
         $input = $process->getInput() ?? [];
         $productNameHint = (string) ($input['productName'] ?? $process->getName());
         $output = $process->getOutput() ?? [];
+        $completionOptions = CompletionOptions::fromProcessInput($input, $batchId, $forceAdaptiveThinking);
 
         $result = match ($step) {
-            self::STEP_CLASSIFICATION => $this->runClassification($process->getId(), $template, $locales, $sourceText, $productNameHint, $context),
-            self::STEP_DESCRIPTION => $this->runDescription($process->getId(), $template, $locales, $sourceText, $productNameHint, $input),
-            self::STEP_SEO => $this->runSeo($process->getId(), $template, $locales, $sourceText, $productNameHint, $input),
-            self::STEP_PROPERTIES => $this->runProperties($process->getId(), $sourceText, $productNameHint, $context),
-            self::STEP_CATEGORY => $this->runCategory($process, $locales, $sourceText, $productNameHint),
+            self::STEP_CLASSIFICATION => $this->runClassification($process->getId(), $template, $locales, $sourceText, $productNameHint, $context, $completionOptions),
+            self::STEP_DESCRIPTION => $this->runDescription($process->getId(), $template, $locales, $sourceText, $productNameHint, $input, $completionOptions),
+            self::STEP_SEO => $this->runSeo($process->getId(), $template, $locales, $sourceText, $productNameHint, $input, $completionOptions),
+            self::STEP_PROPERTIES => $this->runProperties($process->getId(), $sourceText, $productNameHint, $context, $completionOptions),
+            self::STEP_CATEGORY => $this->runCategory($process, $locales, $sourceText, $productNameHint, $completionOptions),
             default => throw new \RuntimeException(\sprintf('Unknown generation step "%s"', $step)),
         };
 
@@ -160,6 +168,7 @@ class ProcessGenerator
         string $sourceText,
         string $productNameHint,
         Context $context,
+        CompletionOptions $completionOptions,
     ): array {
         $features = $template->getConfig()['features'] ?? [];
 
@@ -189,6 +198,7 @@ class ProcessGenerator
             $prompt,
             $processId,
             self::STEP_CLASSIFICATION,
+            $completionOptions,
         );
 
         $result = [
@@ -237,6 +247,7 @@ class ProcessGenerator
         string $sourceText,
         string $productNameHint,
         array $input,
+        CompletionOptions $completionOptions,
     ): array {
         $descriptionTemplates = $this->promptBuilder->prepareDescriptionTemplates(
             $template->getDescriptionTemplates() ?? [],
@@ -261,6 +272,7 @@ class ProcessGenerator
             $prompt,
             $processId,
             self::STEP_DESCRIPTION,
+            $completionOptions,
         );
         $placeholderValues = \is_array($data['placeholders'] ?? null) ? $data['placeholders'] : [];
 
@@ -338,6 +350,7 @@ class ProcessGenerator
         string $sourceText,
         string $productNameHint,
         array $input,
+        CompletionOptions $completionOptions,
     ): array {
         $fieldModes = $template->getConfig()['fieldModes'] ?? [];
 
@@ -355,6 +368,7 @@ class ProcessGenerator
             $prompt,
             $processId,
             self::STEP_SEO,
+            $completionOptions,
         );
         $fields = \is_array($data['fields'] ?? null) ? $data['fields'] : [];
 
@@ -375,7 +389,13 @@ class ProcessGenerator
     /**
      * @return array<string, mixed>
      */
-    private function runProperties(string $processId, string $sourceText, string $productNameHint, Context $context): array
+    private function runProperties(
+        string $processId,
+        string $sourceText,
+        string $productNameHint,
+        Context $context,
+        CompletionOptions $completionOptions,
+    ): array
     {
         $criteria = new Criteria();
         $criteria->addAssociation('options');
@@ -413,6 +433,7 @@ class ProcessGenerator
             $prompt,
             $processId,
             self::STEP_PROPERTIES,
+            $completionOptions,
         );
 
         $validIds = [];
@@ -442,6 +463,7 @@ class ProcessGenerator
         array $locales,
         string $sourceText,
         string $productNameHint,
+        CompletionOptions $completionOptions,
     ): array {
         $categoryTemplate = $process->getCategoryTemplate();
         if ($categoryTemplate === null) {
@@ -460,6 +482,7 @@ class ProcessGenerator
             $prompt,
             $process->getId(),
             self::STEP_CATEGORY,
+            $completionOptions,
         );
 
         return [

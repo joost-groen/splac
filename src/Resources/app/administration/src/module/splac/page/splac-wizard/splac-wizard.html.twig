@@ -220,6 +220,98 @@
                 </sw-card>
 
                 <sw-card
+                    position-identifier="splac-wizard-ai-processing"
+                    :title="$tc('splac.wizard.cardAiProcessing')"
+                >
+                    <p class="splac-wizard__processing-intro">
+                        {{ $tc('splac.wizard.aiProcessingHint') }}
+                    </p>
+
+                    <div class="splac-wizard__processing-grid">
+                        <section
+                            class="splac-wizard__processing-option"
+                            :class="{
+                                'is--active': input.reasoningEnabled,
+                                'is--unavailable': !llmCapabilities.reasoning
+                            }"
+                        >
+                            <div class="splac-wizard__processing-option-header">
+                                <span class="splac-wizard__processing-icon">
+                                    <sw-icon name="regular-lightbulb" size="22px"></sw-icon>
+                                </span>
+                                <div class="splac-wizard__processing-option-title">
+                                    <h3>{{ $tc('splac.wizard.reasoningTitle') }}</h3>
+                                    <span>{{ $tc('splac.wizard.qualityControl') }}</span>
+                                </div>
+                                <sw-switch-field
+                                    v-model:value="input.reasoningEnabled"
+                                    :disabled="!llmCapabilities.reasoning"
+                                    :label="$tc('splac.wizard.reasoningToggle')"
+                                ></sw-switch-field>
+                            </div>
+
+                            <p>{{ $tc('splac.wizard.reasoningHelp') }}</p>
+
+                            <div
+                                v-if="llmCapabilities.reasoning && input.reasoningEnabled"
+                                class="splac-wizard__reasoning-level"
+                            >
+                                <span>{{ $tc('splac.wizard.reasoningLevel') }}</span>
+                                <div class="splac-wizard__segmented-control">
+                                    <button
+                                        v-for="option in reasoningLevelOptions"
+                                        :key="option.value"
+                                        type="button"
+                                        :class="{ 'is--selected': input.reasoningLevel === option.value }"
+                                        @click="input.reasoningLevel = option.value"
+                                    >
+                                        {{ option.label }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div v-else-if="!llmCapabilities.reasoning" class="splac-wizard__provider-notice">
+                                {{ $tc('splac.wizard.providerUnsupported', 0, { provider: providerLabel }) }}
+                            </div>
+                        </section>
+
+                        <section
+                            class="splac-wizard__processing-option"
+                            :class="{
+                                'is--active': input.batchProcessing,
+                                'is--unavailable': !llmCapabilities.batchProcessing
+                            }"
+                        >
+                            <div class="splac-wizard__processing-option-header">
+                                <span class="splac-wizard__processing-icon">
+                                    <sw-icon name="regular-clock" size="22px"></sw-icon>
+                                </span>
+                                <div class="splac-wizard__processing-option-title">
+                                    <h3>{{ $tc('splac.wizard.batchTitle') }}</h3>
+                                    <span>{{ $tc('splac.wizard.costControl') }}</span>
+                                </div>
+                                <sw-switch-field
+                                    v-model:value="input.batchProcessing"
+                                    :disabled="!llmCapabilities.batchProcessing"
+                                    :label="$tc('splac.wizard.batchToggle')"
+                                ></sw-switch-field>
+                            </div>
+
+                            <p>{{ $tc('splac.wizard.batchHelp') }}</p>
+
+                            <div v-if="llmCapabilities.batchProcessing" class="splac-wizard__batch-note">
+                                <sw-icon name="regular-info-circle" size="14px"></sw-icon>
+                                {{ $tc('splac.wizard.batchTiming') }}
+                            </div>
+
+                            <div v-else class="splac-wizard__provider-notice">
+                                {{ $tc('splac.wizard.providerUnsupported', 0, { provider: providerLabel }) }}
+                            </div>
+                        </section>
+                    </div>
+                </sw-card>
+
+                <sw-card
                     position-identifier="splac-wizard-instructions"
                     :title="$tc('splac.wizard.cardInstructions')"
                 >

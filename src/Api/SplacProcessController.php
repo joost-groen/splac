@@ -13,6 +13,7 @@ use Splac\Core\Content\Process\ProcessEntity;
 use Splac\Core\Content\ProcessSource\ProcessSourceDefinition;
 use Splac\MessageQueue\Message\ExtractSourcesMessage;
 use Splac\MessageQueue\Message\GenerateProcessMessage;
+use Splac\Service\Llm\LlmService;
 use Splac\Service\Llm\LlmUsageService;
 use Splac\Service\ProcessGenerator;
 use Splac\Service\ProductCreator;
@@ -33,6 +34,7 @@ class SplacProcessController
         private readonly ProductCreator $productCreator,
         private readonly ProcessGenerator $processGenerator,
         private readonly LlmUsageService $llmUsageService,
+        private readonly LlmService $llmService,
     ) {
     }
 
@@ -40,6 +42,12 @@ class SplacProcessController
     public function costStatistics(): JsonResponse
     {
         return new JsonResponse($this->llmUsageService->statistics());
+    }
+
+    #[Route(path: '/api/_action/splac/llm-capabilities', name: 'api.action.splac.llm_capabilities', methods: ['GET'])]
+    public function llmCapabilities(): JsonResponse
+    {
+        return new JsonResponse($this->llmService->capabilities());
     }
 
     #[Route(path: '/api/_action/splac/process', name: 'api.action.splac.process.create', methods: ['POST'])]

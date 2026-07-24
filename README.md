@@ -21,6 +21,9 @@ LLM generates everything else. Nothing goes live without review — the product 
   tags and search keywords, DE + EN translations.
 - **Async pipeline** via the Shopware message queue with a live-monitoring dashboard
   (retry, cancel, delete).
+- **Per-listing Anthropic controls** for optional extended reasoning (low, medium, or high)
+  and asynchronous Message Batch processing. Reasoning blocks are kept separate from the
+  final structured JSON, while batch polling yields the worker between status checks.
 - **Usage cost tracking** based on provider-reported token counts and configurable input,
   output, and OCR page rates, with per-listing costs and 24-hour, 30-day, and all-time totals.
   Changing the configured currency starts a separate set of dashboard totals; historical

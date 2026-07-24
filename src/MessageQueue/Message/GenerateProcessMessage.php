@@ -13,6 +13,20 @@ class GenerateProcessMessage implements AsyncMessageInterface
          * (description, seo, properties, classification, category).
          */
         public readonly ?string $onlyStep = null,
+        /**
+         * Anthropic Message Batch ID while an asynchronous step is in flight.
+         */
+        public readonly ?string $batchId = null,
+        /**
+         * @var list<string>
+         *
+         * Steps to continue after an asynchronous batch step completes.
+         */
+        public readonly array $remainingSteps = [],
+        /**
+         * Retry the step using adaptive thinking after an explicit provider rejection.
+         */
+        public readonly bool $forceAdaptiveThinking = false,
     ) {
     }
 }
