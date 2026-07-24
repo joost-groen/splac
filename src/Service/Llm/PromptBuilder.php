@@ -28,24 +28,91 @@ PROMPT;
     }
 
     /**
+     * Adds generated table placeholders that were omitted by older versions
+     * of the administration template editor.
+     *
+     * @param array<string, string> $descriptionTemplates
+     * @param array<string, mixed> $templateConfig
+     * @param list<string> $locales
+     *
+     * @return array<string, string>
+     */
+    public function prepareDescriptionTemplates(
+        array $descriptionTemplates,
+        array $templateConfig,
+        array $locales,
+    ): array {
+        $blocksByLocale = \is_array($templateConfig['descriptionBlocks'] ?? null)
+            ? $templateConfig['descriptionBlocks']
+            : [];
+
+        foreach ($locales as $locale) {
+            $html = $descriptionTemplates[$locale] ?? null;
+            $blocks = $blocksByLocale[$locale] ?? null;
+            if (!\is_string($html) || !\is_array($blocks)) {
+                continue;
+            }
+
+            foreach ($blocks as $block) {
+                if (!\is_array($block) || ($block['type'] ?? null) !== 'table') {
+                    continue;
+                }
+
+                $rows = \is_array($block['rows'] ?? null) ? $block['rows'] : [];
+                foreach ($rows as $row) {
+                    if (!\is_array($row) || ($row['mode'] ?? 'placeholder') === 'static') {
+                        continue;
+                    }
+
+                    $label = trim((string) ($row['label'] ?? ''));
+                    $placeholder = $this->normalizePlaceholder(
+                        (string) ($row['placeholder'] ?? '') ?: $label
+                    );
+                    if ($label === '' || $placeholder === '') {
+                        continue;
+                    }
+
+                    $escapedLabel = htmlspecialchars($label, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8');
+                    $emptyRow = "<tr><th>{$escapedLabel}</th><td></td></tr>";
+                    $generatedRow = "<tr><th>{$escapedLabel}</th><td>{{"
+                        . $placeholder
+                        . '}}</td></tr>';
+                    $html = str_replace($emptyRow, $generatedRow, $html);
+                }
+            }
+
+            $descriptionTemplates[$locale] = $html;
+        }
+
+        return $descriptionTemplates;
+    }
+
+    /**
      * @param array<string, string> $descriptionTemplates locale => HTML template with {{placeholders}}
      * @param list<string> $locales
+     * @param array<string, array<string, array{type: string, instruction: string}>> $generatedBlocks
      */
     public function buildDescriptionPrompt(
         array $descriptionTemplates,
         array $locales,
+        array $generatedBlocks,
         string $sourceText,
         string $productNameHint,
         ?string $userInstruction,
     ): string {
+        $filteredTemplates = $this->filterLocales($descriptionTemplates, $locales);
         $placeholders = [];
-        foreach ($descriptionTemplates as $html) {
+        foreach ($filteredTemplates as $html) {
             preg_match_all('/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/', $html, $matches);
             $placeholders = array_merge($placeholders, $matches[1]);
         }
         $placeholders = array_values(array_unique($placeholders));
 
-        $templatesJson = json_encode($this->filterLocales($descriptionTemplates, $locales), \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
+        $templatesJson = json_encode($filteredTemplates, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
+        $generatedBlocksJson = json_encode($this->filterLocales($generatedBlocks, $locales), \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
+        $generatedBlockRules = $generatedBlocks !== []
+            ? "\nSome placeholders represent complete generated blocks. For those placeholders, write the complete block content according to its instruction. Do not include the surrounding heading or paragraph HTML tag; it is already present in the template:\n{$generatedBlocksJson}\n"
+            : '';
         $placeholderList = implode(', ', $placeholders);
         $localeList = $this->describeLocales($locales);
         $instruction = $userInstruction !== null && $userInstruction !== ''
@@ -59,6 +126,7 @@ Product: {$productNameHint}{$instruction}
 
 The description templates per language (JSON, locale => HTML). Everything that is NOT a {{placeholder}} must remain byte-for-byte unchanged (static blocks like legal disclaimers, shipping info, driver links):
 {$templatesJson}
+{$generatedBlockRules}
 
 Placeholders to fill: {$placeholderList}
 
@@ -287,6 +355,26 @@ PROMPT;
         $filtered = array_intersect_key($templates, array_flip($locales));
 
         return $filtered !== [] ? $filtered : $templates;
+    }
+
+    private function normalizePlaceholder(string $value): string
+    {
+        $value = strtr(trim($value), [
+            'ß' => 'ss',
+            'Æ' => 'AE',
+            'æ' => 'ae',
+            'Ø' => 'O',
+            'ø' => 'o',
+        ]);
+
+        if (class_exists(\Normalizer::class)) {
+            $value = \Normalizer::normalize($value, \Normalizer::FORM_KD) ?: $value;
+            $value = preg_replace('/\p{Mn}+/u', '', $value) ?? $value;
+        }
+
+        $value = preg_replace('/\s+/', '_', $value) ?? $value;
+
+        return preg_replace('/[^a-zA-Z0-9_.-]/', '', $value) ?? '';
     }
 
     /**

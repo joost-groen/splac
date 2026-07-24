@@ -127,4 +127,65 @@ class GeminiClient implements LlmClientInterface
 
         return $content;
     }
+
+    public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): string
+    {
+        $url = \sprintf(
+            'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
+            rawurlencode($model)
+        );
+
+        try {
+            $response = $this->httpClient->request('POST', $url, [
+                'headers' => [
+                    'x-goog-api-key' => $apiKey,
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => [
+                    'contents' => [[
+                        'role' => 'user',
+                        'parts' => [
+                            [
+                                'inline_data' => [
+                                    'mime_type' => 'application/pdf',
+                                    'data' => base64_encode($pdfContent),
+                                ],
+                            ],
+                            ['text' => self::PDF_OCR_PROMPT],
+                        ],
+                    ]],
+                    'generationConfig' => [
+                        'temperature' => 0,
+                    ],
+                ],
+                'timeout' => 180,
+            ]);
+
+            $data = $response->toArray();
+        } catch (\Throwable $e) {
+            throw new LlmException('Gemini PDF OCR request failed: ' . $e->getMessage(), 0, $e);
+        }
+
+        $parts = [];
+        foreach ($data['candidates'][0]['content']['parts'] ?? [] as $part) {
+            if (!\is_array($part)) {
+                continue;
+            }
+
+            if (($part['thought'] ?? false) === true) {
+                continue;
+            }
+
+            if (\is_string($part['text'] ?? null)) {
+                $parts[] = $part['text'];
+            }
+        }
+
+        $text = trim(implode('', $parts));
+        if ($text === '') {
+            throw new LlmException('Gemini returned an empty PDF OCR response');
+        }
+
+        return $text;
+    }
 }

@@ -12,6 +12,8 @@ class LlmService
 {
     private const CONFIG_PREFIX = 'Splac.config.';
 
+    private const MAX_OCR_CHARS = 60000;
+
     /**
      * @var array<string, LlmClientInterface>
      */
@@ -36,6 +38,37 @@ class LlmService
      */
     public function completeJson(string $systemPrompt, string $userPrompt): array
     {
+        [$client, $apiKey, $model] = $this->configuredClient();
+
+        $raw = $client->complete($apiKey, $model, $systemPrompt, $userPrompt);
+
+        return $this->decodeJson($raw);
+    }
+
+    /**
+     * Sends raw PDF bytes to the configured provider for OCR/document transcription.
+     */
+    public function ocrPdf(string $pdfContent, string $filename): string
+    {
+        if ($pdfContent === '') {
+            throw new LlmException('Cannot OCR an empty PDF');
+        }
+
+        [$client, $apiKey, $model] = $this->configuredClient();
+
+        $text = trim($client->ocrPdf($apiKey, $model, $pdfContent, $filename));
+        if (mb_strlen($text) > self::MAX_OCR_CHARS) {
+            return mb_substr($text, 0, self::MAX_OCR_CHARS) . "\n[... OCR truncated ...]";
+        }
+
+        return $text;
+    }
+
+    /**
+     * @return array{LlmClientInterface, string, string}
+     */
+    private function configuredClient(): array
+    {
         $provider = (string) ($this->systemConfig->get(self::CONFIG_PREFIX . 'provider') ?? 'openai');
 
         $client = $this->clients[$provider] ?? null;
@@ -53,9 +86,7 @@ class LlmService
             throw new LlmException(\sprintf('No model configured for provider "%s". Please set it in the plugin configuration.', $provider));
         }
 
-        $raw = $client->complete($apiKey, $model, $systemPrompt, $userPrompt);
-
-        return $this->decodeJson($raw);
+        return [$client, $apiKey, $model];
     }
 
     /**

@@ -4,10 +4,19 @@ namespace Splac\Service;
 
 use Smalot\PdfParser\Config;
 use Smalot\PdfParser\Parser;
+use Symfony\Component\Process\Process;
 
 class PdfTextExtractor
 {
     private const MAX_CHARS = 60000;
+
+    private const MAX_OCR_PAGES = 20;
+
+    public function __construct(
+        private readonly ?string $pdftoppmBinary = null,
+        private readonly ?string $tesseractBinary = null,
+    ) {
+    }
 
     /**
      * Extracts plain text from raw PDF bytes.
@@ -22,6 +31,18 @@ class PdfTextExtractor
 
         $text = $document->getText();
 
+        if ($this->needsOcrFallback($text)) {
+            $ocrText = $this->extractWithOcr($pdfContent);
+            if ($ocrText !== '') {
+                // Put OCR first so its recovered values survive the global
+                // prompt-size limit even for unusually long datasheets.
+                $text = "=== OCR fallback for text missing from embedded PDF fonts ===\n"
+                    . $ocrText
+                    . "\n\n=== Embedded PDF text ===\n"
+                    . $text;
+            }
+        }
+
         // Normalize whitespace so prompts stay compact.
         $text = preg_replace('/[ \t]+/', ' ', $text) ?? $text;
         $text = preg_replace('/\n{3,}/', "\n\n", $text) ?? $text;
@@ -32,5 +53,112 @@ class PdfTextExtractor
         }
 
         return $text;
+    }
+
+    private function needsOcrFallback(string $text): bool
+    {
+        // Broken or missing ToUnicode maps commonly leave labels intact while
+        // dropping the bold value after the colon. A few such lines can be
+        // legitimate; several in one document are a strong OCR signal.
+        preg_match_all('/^[^\n:]{2,100}:\s*$/m', $text, $matches);
+
+        return \count($matches[0]) >= 3;
+    }
+
+    private function extractWithOcr(string $pdfContent): string
+    {
+        $pdftoppm = $this->resolveBinary($this->pdftoppmBinary, [
+            '/usr/bin/pdftoppm',
+            '/usr/local/bin/pdftoppm',
+            '/opt/homebrew/bin/pdftoppm',
+        ]);
+        $tesseract = $this->resolveBinary($this->tesseractBinary, [
+            '/usr/bin/tesseract',
+            '/usr/local/bin/tesseract',
+            '/opt/homebrew/bin/tesseract',
+        ]);
+
+        if ($pdftoppm === null || $tesseract === null) {
+            return '';
+        }
+
+        $temporaryDirectory = sys_get_temp_dir() . '/splac-ocr-' . bin2hex(random_bytes(8));
+        if (!mkdir($temporaryDirectory, 0700) && !is_dir($temporaryDirectory)) {
+            return '';
+        }
+
+        $pdfPath = $temporaryDirectory . '/source.pdf';
+        $imagePrefix = $temporaryDirectory . '/page';
+
+        try {
+            if (file_put_contents($pdfPath, $pdfContent) === false) {
+                return '';
+            }
+
+            $render = new Process([
+                $pdftoppm,
+                '-f',
+                '1',
+                '-l',
+                (string) self::MAX_OCR_PAGES,
+                '-r',
+                '180',
+                '-png',
+                $pdfPath,
+                $imagePrefix,
+            ]);
+            $render->setTimeout(120);
+            $render->run();
+            if (!$render->isSuccessful()) {
+                return '';
+            }
+
+            $pages = glob($imagePrefix . '-*.png') ?: [];
+            natsort($pages);
+
+            $parts = [];
+            foreach ($pages as $pageNumber => $pagePath) {
+                $ocr = new Process([$tesseract, $pagePath, 'stdout', '-l', 'eng']);
+                $ocr->setTimeout(60);
+                $ocr->run();
+                if (!$ocr->isSuccessful()) {
+                    continue;
+                }
+
+                $pageText = trim($ocr->getOutput());
+                if ($pageText !== '') {
+                    $parts[] = \sprintf("=== OCR page %d ===\n%s", $pageNumber + 1, $pageText);
+                }
+            }
+
+            return implode("\n\n", $parts);
+        } catch (\Throwable) {
+            return '';
+        } finally {
+            foreach (glob($temporaryDirectory . '/*') ?: [] as $temporaryFile) {
+                if (is_file($temporaryFile)) {
+                    @unlink($temporaryFile);
+                }
+            }
+            @rmdir($temporaryDirectory);
+        }
+    }
+
+    /**
+     * @param list<string> $candidates
+     */
+    private function resolveBinary(?string $configuredPath, array $candidates): ?string
+    {
+        if ($configuredPath !== null && is_executable($configuredPath)) {
+            return $configuredPath;
+        }
+
+        foreach ($candidates as $candidate) {
+            if (is_executable($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 }

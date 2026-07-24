@@ -12,13 +12,30 @@ const createId = (prefix) => {
     return `${prefix}-${Date.now()}-${blockSequence}`;
 };
 
-const createTableRow = (values = {}) => ({
-    id: values.id || createId('row'),
-    label: values.label || '',
-    mode: values.mode === 'static' ? 'static' : 'placeholder',
-    placeholder: values.placeholder || '',
-    content: values.content || '',
-});
+const normalizePlaceholder = (value) => String(value || '')
+    .trim()
+    .replace(/ß/g, 'ss')
+    .replace(/Æ/g, 'AE')
+    .replace(/æ/g, 'ae')
+    .replace(/Ø/g, 'O')
+    .replace(/ø/g, 'o')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_.-]/g, '');
+
+const createTableRow = (values = {}) => {
+    const label = values.label || '';
+    const mode = values.mode === 'static' ? 'static' : 'placeholder';
+
+    return {
+        id: values.id || createId('row'),
+        label,
+        mode,
+        placeholder: values.placeholder || (mode === 'placeholder' ? normalizePlaceholder(label) : ''),
+        content: values.content || '',
+    };
+};
 
 const createBlock = (type, values = {}) => {
     const safeType = BLOCK_TYPES.includes(type) ? type : 'paragraph';
@@ -28,10 +45,21 @@ const createBlock = (type, values = {}) => {
     };
 
     if (safeType === 'heading') {
-        return { ...block, level: values.level || 'h2', content: values.content || '' };
+        return {
+            ...block,
+            level: values.level || 'h2',
+            contentMode: values.contentMode || (String(values.content || '').includes('{{') ? 'placeholder' : 'static'),
+            content: values.content || '',
+            instruction: values.instruction || '',
+        };
     }
     if (safeType === 'paragraph') {
-        return { ...block, content: values.content || '' };
+        return {
+            ...block,
+            contentMode: values.contentMode || (String(values.content || '').includes('{{') ? 'placeholder' : 'static'),
+            content: values.content || '',
+            instruction: values.instruction || '',
+        };
     }
     if (safeType === 'table') {
         return {
@@ -117,6 +145,14 @@ Shopware.Component.register('splac-template-detail', {
             return [
                 { value: 'placeholder', label: this.$tc('splac.templateDetail.tableValueGenerated') },
                 { value: 'static', label: this.$tc('splac.templateDetail.tableValueStatic') },
+            ];
+        },
+
+        blockContentModeOptions() {
+            return [
+                { value: 'static', label: this.$tc('splac.templateDetail.blockModeStatic') },
+                { value: 'generated', label: this.$tc('splac.templateDetail.blockModeGenerated') },
+                { value: 'placeholder', label: this.$tc('splac.templateDetail.blockModePlaceholder') },
             ];
         },
 
@@ -282,16 +318,46 @@ Shopware.Component.register('splac-template-detail', {
             block.rows.splice(rowIndex, 1);
         },
 
+        insertBlockPlaceholder(block) {
+            const value = window.prompt(this.$tc('splac.templateDetail.placeholderPrompt'));
+            const placeholder = this.normalizePlaceholder(value);
+            if (!placeholder) {
+                return;
+            }
+
+            const token = `{{${placeholder}}}`;
+            block.content = block.content ? `${block.content} ${token}` : token;
+        },
+
         blockTypeLabel(type) {
             return this.$tc(`splac.templateDetail.blockType.${type}`);
         },
 
         syncDescriptionTemplates() {
+            this.ensureTablePlaceholders();
+
             const templates = {};
             LOCALES.forEach((locale) => {
                 templates[locale] = this.renderDescriptionLocale(locale);
             });
             this.item.descriptionTemplates = templates;
+        },
+
+        ensureTablePlaceholders() {
+            LOCALES.forEach((locale) => {
+                const blocks = this.item?.config?.descriptionBlocks?.[locale] || [];
+                blocks.forEach((block) => {
+                    if (block.type !== 'table') {
+                        return;
+                    }
+
+                    (block.rows || []).forEach((row) => {
+                        if (row.mode !== 'static' && !this.normalizePlaceholder(row.placeholder)) {
+                            row.placeholder = this.normalizePlaceholder(row.label);
+                        }
+                    });
+                });
+            });
         },
 
         renderDescriptionLocale(locale) {
@@ -301,13 +367,19 @@ Shopware.Component.register('splac-template-detail', {
         },
 
         renderDescriptionBlock(block) {
+            const content = block.contentMode === 'generated'
+                ? `{{${this.generatedBlockPlaceholder(block)}}}`
+                : block.content;
+
             if (block.type === 'heading') {
                 const level = ['h2', 'h3', 'h4'].includes(block.level) ? block.level : 'h2';
-                return `<${level}>${this.escapeHtml(block.content)}</${level}>`;
+                return `<${level}>${block.contentMode === 'generated' ? content : this.escapeHtml(content)}</${level}>`;
             }
 
             if (block.type === 'paragraph') {
-                return `<p>${this.escapeHtml(block.content).replace(/\n/g, '<br>')}</p>`;
+                return `<p>${block.contentMode === 'generated'
+                    ? content
+                    : this.escapeHtml(content).replace(/\n/g, '<br>')}</p>`;
             }
 
             if (block.type === 'table') {
@@ -315,7 +387,7 @@ Shopware.Component.register('splac-template-detail', {
                     ? `<h3>${this.escapeHtml(block.title)}</h3>\n`
                     : '';
                 const rows = (block.rows || []).map((row) => {
-                    const placeholder = this.normalizePlaceholder(row.placeholder);
+                    const placeholder = this.normalizePlaceholder(row.placeholder || row.label);
                     const value = row.mode === 'static'
                         ? this.escapeHtml(row.content).replace(/\n/g, '<br>')
                         : (placeholder ? `{{${placeholder}}}` : '');
@@ -329,8 +401,12 @@ Shopware.Component.register('splac-template-detail', {
             return block.content || '';
         },
 
+        generatedBlockPlaceholder(block) {
+            return `splac_block_${String(block.id || '').replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
+        },
+
         normalizePlaceholder(value) {
-            return String(value || '').trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_.-]/g, '');
+            return normalizePlaceholder(value);
         },
 
         escapeHtml(value) {

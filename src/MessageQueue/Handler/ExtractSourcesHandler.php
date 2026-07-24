@@ -6,12 +6,15 @@ use Shopware\Core\Content\Media\File\FileLoader;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Splac\Core\Content\Process\ProcessDefinition;
 use Splac\Core\Content\Process\ProcessEntity;
 use Splac\Core\Content\ProcessSource\ProcessSourceDefinition;
 use Splac\Core\Content\ProcessSource\ProcessSourceEntity;
 use Splac\MessageQueue\Message\ExtractSourcesMessage;
 use Splac\MessageQueue\Message\GenerateProcessMessage;
+use Splac\Service\Llm\LlmException;
+use Splac\Service\Llm\LlmService;
 use Splac\Service\PdfTextExtractor;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -19,10 +22,20 @@ use Symfony\Component\Messenger\MessageBusInterface;
 #[AsMessageHandler]
 class ExtractSourcesHandler
 {
+    private const PDF_EXTRACTION_MODE_CONFIG = 'Splac.config.pdfExtractionMode';
+
+    private const PDF_EXTRACTION_MODE_AUTOMATIC = 'automatic';
+
+    private const PDF_EXTRACTION_MODE_PROVIDER = 'provider';
+
+    private const PDF_EXTRACTION_MODE_LOCAL = 'local';
+
     public function __construct(
         private readonly EntityRepository $processRepository,
         private readonly EntityRepository $processSourceRepository,
         private readonly FileLoader $fileLoader,
+        private readonly SystemConfigService $systemConfig,
+        private readonly LlmService $llmService,
         private readonly PdfTextExtractor $pdfTextExtractor,
         private readonly MessageBusInterface $messageBus,
     ) {
@@ -63,7 +76,7 @@ class ExtractSourcesHandler
                     }
 
                     $content = $this->fileLoader->loadMediaFile($source->getMediaId(), $context);
-                    $text = $this->pdfTextExtractor->extract($content);
+                    $text = $this->extractPdfText($content, $source->getFilename());
 
                     $this->processSourceRepository->update([[
                         'id' => $source->getId(),
@@ -93,5 +106,43 @@ class ExtractSourcesHandler
         }
 
         $this->messageBus->dispatch(new GenerateProcessMessage($process->getId()));
+    }
+
+    private function extractPdfText(string $content, string $filename): string
+    {
+        $mode = (string) ($this->systemConfig->get(self::PDF_EXTRACTION_MODE_CONFIG)
+            ?? self::PDF_EXTRACTION_MODE_AUTOMATIC);
+
+        if ($mode === self::PDF_EXTRACTION_MODE_LOCAL) {
+            return $this->extractPdfLocally($content);
+        }
+
+        if ($mode === self::PDF_EXTRACTION_MODE_PROVIDER) {
+            return $this->llmService->ocrPdf($content, $filename);
+        }
+
+        try {
+            return $this->llmService->ocrPdf($content, $filename);
+        } catch (LlmException $providerError) {
+            try {
+                return $this->extractPdfLocally($content);
+            } catch (\Throwable $fallbackError) {
+                throw new LlmException(
+                    $providerError->getMessage() . '; local PDF extraction also failed: ' . $fallbackError->getMessage(),
+                    0,
+                    $providerError
+                );
+            }
+        }
+    }
+
+    private function extractPdfLocally(string $content): string
+    {
+        $text = $this->pdfTextExtractor->extract($content);
+        if (trim($text) === '') {
+            throw new \RuntimeException('Local PDF extraction returned no text');
+        }
+
+        return $text;
     }
 }

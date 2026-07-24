@@ -33,6 +33,35 @@
     </card>
 
     <card>
+        <title>PDF extraction</title>
+        <title lang="de-DE">PDF-Extraktion</title>
+
+        <input-field type="single-select">
+            <name>pdfExtractionMode</name>
+            <label>OCR mode</label>
+            <label lang="de-DE">OCR-Modus</label>
+            <defaultValue>automatic</defaultValue>
+            <options>
+                <option>
+                    <id>automatic</id>
+                    <name>Provider OCR with local fallback</name>
+                    <name lang="de-DE">Anbieter-OCR mit lokalem Fallback</name>
+                </option>
+                <option>
+                    <id>provider</id>
+                    <name>Provider OCR only</name>
+                    <name lang="de-DE">Nur Anbieter-OCR</name>
+                </option>
+                <option>
+                    <id>local</id>
+                    <name>Local extraction only</name>
+                    <name lang="de-DE">Nur lokale Extraktion</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
         <title>OpenAI</title>
 
         <input-field type="password">

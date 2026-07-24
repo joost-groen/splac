@@ -162,21 +162,65 @@
                                     :label="$tc('splac.templateDetail.headingLevel')"
                                     :options="headingLevelOptions"
                                 ></sw-select-field>
+                                <sw-select-field
+                                    v-model="block.contentMode"
+                                    :label="$tc('splac.templateDetail.blockContentMode')"
+                                    :options="blockContentModeOptions"
+                                ></sw-select-field>
+                                <sw-textarea-field
+                                    v-if="block.contentMode === 'generated'"
+                                    v-model="block.instruction"
+                                    :label="$tc('splac.templateDetail.blockInstruction')"
+                                    :placeholder="$tc('splac.templateDetail.headingInstructionPlaceholder')"
+                                    :help-text="$tc('splac.templateDetail.blockInstructionHelp')"
+                                ></sw-textarea-field>
                                 <sw-text-field
+                                    v-else
                                     v-model:value="block.content"
                                     :label="$tc('splac.templateDetail.headingText')"
-                                    :help-text="$tc('splac.templateDetail.inlinePlaceholderHelp')"
+                                    :help-text="block.contentMode === 'placeholder'
+                                        ? $tc('splac.templateDetail.inlinePlaceholderHelp')
+                                        : $tc('splac.templateDetail.staticTextHelp')"
                                 ></sw-text-field>
+                                <sw-button
+                                    v-if="block.contentMode === 'placeholder'"
+                                    size="small"
+                                    @click="insertBlockPlaceholder(block)"
+                                >
+                                    + {{ $tc('splac.templateDetail.insertPlaceholder') }}
+                                </sw-button>
                             </div>
 
                             <div
                                 v-else-if="block.type === 'paragraph'"
                             >
+                                <sw-select-field
+                                    v-model="block.contentMode"
+                                    :label="$tc('splac.templateDetail.blockContentMode')"
+                                    :options="blockContentModeOptions"
+                                ></sw-select-field>
                                 <sw-textarea-field
+                                    v-if="block.contentMode === 'generated'"
+                                    v-model="block.instruction"
+                                    :label="$tc('splac.templateDetail.blockInstruction')"
+                                    :placeholder="$tc('splac.templateDetail.paragraphInstructionPlaceholder')"
+                                    :help-text="$tc('splac.templateDetail.blockInstructionHelp')"
+                                ></sw-textarea-field>
+                                <sw-textarea-field
+                                    v-else
                                     v-model="block.content"
                                     :label="$tc('splac.templateDetail.paragraphText')"
-                                    :help-text="$tc('splac.templateDetail.inlinePlaceholderHelp')"
+                                    :help-text="block.contentMode === 'placeholder'
+                                        ? $tc('splac.templateDetail.inlinePlaceholderHelp')
+                                        : $tc('splac.templateDetail.staticTextHelp')"
                                 ></sw-textarea-field>
+                                <sw-button
+                                    v-if="block.contentMode === 'placeholder'"
+                                    size="small"
+                                    @click="insertBlockPlaceholder(block)"
+                                >
+                                    + {{ $tc('splac.templateDetail.insertPlaceholder') }}
+                                </sw-button>
                             </div>
 
                             <div v-else-if="block.type === 'table'">

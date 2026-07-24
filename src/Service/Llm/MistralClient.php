@@ -48,4 +48,51 @@ class MistralClient implements LlmClientInterface
 
         return $content;
     }
+
+    public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): string
+    {
+        try {
+            $response = $this->httpClient->request('POST', 'https://api.mistral.ai/v1/ocr', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => [
+                    'model' => 'mistral-ocr-latest',
+                    'document' => [
+                        'type' => 'document_url',
+                        'document_url' => 'data:application/pdf;base64,' . base64_encode($pdfContent),
+                    ],
+                    'table_format' => 'markdown',
+                ],
+                'timeout' => 180,
+            ]);
+
+            $data = $response->toArray();
+        } catch (\Throwable $e) {
+            throw new LlmException('Mistral PDF OCR request failed: ' . $e->getMessage(), 0, $e);
+        }
+
+        $parts = [];
+        foreach ($data['pages'] ?? [] as $page) {
+            if (!\is_array($page)) {
+                continue;
+            }
+
+            $markdown = trim(\is_string($page['markdown'] ?? null) ? $page['markdown'] : '');
+            if ($markdown === '') {
+                continue;
+            }
+
+            $index = \is_int($page['index'] ?? null) ? $page['index'] + 1 : \count($parts) + 1;
+            $parts[] = \sprintf("=== OCR page %d ===\n%s", $index, $markdown);
+        }
+
+        $text = trim(implode("\n\n", $parts));
+        if ($text === '') {
+            throw new LlmException('Mistral returned an empty PDF OCR response');
+        }
+
+        return $text;
+    }
 }

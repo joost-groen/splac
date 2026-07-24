@@ -29,6 +29,29 @@ LLM generates everything else. Nothing goes live without review — the product 
 OpenAI, Anthropic, Gemini, and Mistral. Select the provider and enter the API key and model
 name under *Settings → System → Plugins → Splac*.
 
+## PDF extraction
+
+Splac sends each uploaded PDF directly to the selected LLM provider for an OCR/document
+transcription pass before any product data is generated. OpenAI, Anthropic, and Gemini use
+their native PDF input support; Mistral uses its Document AI OCR endpoint. The transcription
+is stored once and reused by every generation step.
+
+The **OCR mode** setting offers provider OCR with local fallback (default), provider OCR
+only, or local extraction only. Local extraction can use `pdftoppm` and Tesseract (including
+English language data) for scanned pages or embedded fonts without a usable Unicode map.
+
+On Debian/Ubuntu:
+
+```bash
+apt-get install poppler-utils tesseract-ocr tesseract-ocr-eng
+```
+
+On Alpine Linux:
+
+```bash
+apk add --no-cache poppler-utils tesseract-ocr tesseract-ocr-data-eng
+```
+
 ## Installation
 
 ```bash

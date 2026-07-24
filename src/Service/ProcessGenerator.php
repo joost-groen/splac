@@ -231,7 +231,11 @@ class ProcessGenerator
         string $productNameHint,
         array $input,
     ): array {
-        $descriptionTemplates = $template->getDescriptionTemplates() ?? [];
+        $descriptionTemplates = $this->promptBuilder->prepareDescriptionTemplates(
+            $template->getDescriptionTemplates() ?? [],
+            $template->getConfig() ?? [],
+            $locales,
+        );
         if ($descriptionTemplates === []) {
             return ['description' => []];
         }
@@ -239,6 +243,7 @@ class ProcessGenerator
         $prompt = $this->promptBuilder->buildDescriptionPrompt(
             $descriptionTemplates,
             $locales,
+            $this->generatedDescriptionBlocks($template->getConfig() ?? [], $locales),
             $sourceText,
             $productNameHint,
             \is_string($input['descriptionInstruction'] ?? null) ? $input['descriptionInstruction'] : null,
@@ -268,6 +273,44 @@ class ProcessGenerator
         }
 
         return ['description' => $descriptions];
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @param list<string> $locales
+     *
+     * @return array<string, array<string, array{type: string, instruction: string}>>
+     */
+    private function generatedDescriptionBlocks(array $config, array $locales): array
+    {
+        $blocksByLocale = \is_array($config['descriptionBlocks'] ?? null) ? $config['descriptionBlocks'] : [];
+        $result = [];
+
+        foreach ($locales as $locale) {
+            $blocks = \is_array($blocksByLocale[$locale] ?? null) ? $blocksByLocale[$locale] : [];
+            foreach ($blocks as $block) {
+                if (!\is_array($block) || ($block['contentMode'] ?? null) !== 'generated') {
+                    continue;
+                }
+
+                $type = (string) ($block['type'] ?? 'paragraph');
+                if (!\in_array($type, ['heading', 'paragraph'], true)) {
+                    continue;
+                }
+
+                $id = preg_replace('/[^a-zA-Z0-9_.-]/', '_', (string) ($block['id'] ?? '')) ?? '';
+                if ($id === '') {
+                    continue;
+                }
+
+                $result[$locale]['splac_block_' . $id] = [
+                    'type' => $type,
+                    'instruction' => (string) ($block['instruction'] ?? ''),
+                ];
+            }
+        }
+
+        return $result;
     }
 
     /**
