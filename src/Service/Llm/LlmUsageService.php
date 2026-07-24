@@ -96,7 +96,17 @@ class LlmUsageService
     }
 
     /**
-     * @return array{currency: string, last24Hours: float, last30Days: float, allTime: float}
+     * @return array{
+     *     currency: string,
+     *     last24Hours: float,
+     *     last30Days: float,
+     *     allTime: float,
+     *     averageCostPerCompleted: float,
+     *     totalCompleted: int,
+     *     startedLast30Days: int,
+     *     activeProcesses: int,
+     *     successRate: float
+     * }
      */
     public function statistics(): array
     {
@@ -121,11 +131,44 @@ class LlmUsageService
             ]
         );
 
+        $processRow = $this->connection->fetchAssociative(
+            <<<'SQL'
+                SELECT
+                    SUM(CASE WHEN `status` = 'done' THEN 1 ELSE 0 END) AS `total_completed`,
+                    SUM(CASE WHEN `created_at` >= :last30Days THEN 1 ELSE 0 END) AS `started_last_30_days`,
+                    SUM(CASE WHEN `status` IN ('extracting', 'generating', 'creating') THEN 1 ELSE 0 END) AS `active_processes`,
+                    SUM(CASE WHEN `status` = 'failed' THEN 1 ELSE 0 END) AS `total_failed`,
+                    AVG(
+                        CASE
+                            WHEN `status` = 'done' AND `llm_cost_currency` = :currency THEN `llm_cost`
+                            ELSE NULL
+                        END
+                    ) AS `average_cost_per_completed`
+                FROM `splac_process`
+            SQL,
+            [
+                'last30Days' => $last30Days->format('Y-m-d H:i:s.v'),
+                'currency' => $currency,
+            ]
+        );
+
+        $totalCompleted = (int) ($processRow['total_completed'] ?? 0);
+        $totalFailed = (int) ($processRow['total_failed'] ?? 0);
+        $concludedProcesses = $totalCompleted + $totalFailed;
+        $successRate = $concludedProcesses > 0
+            ? ($totalCompleted / $concludedProcesses) * 100
+            : 0.0;
+
         return [
             'currency' => $currency,
             'last24Hours' => round((float) ($row['last_24_hours'] ?? 0), 8),
             'last30Days' => round((float) ($row['last_30_days'] ?? 0), 8),
             'allTime' => round((float) ($row['all_time'] ?? 0), 8),
+            'averageCostPerCompleted' => round((float) ($processRow['average_cost_per_completed'] ?? 0), 8),
+            'totalCompleted' => $totalCompleted,
+            'startedLast30Days' => (int) ($processRow['started_last_30_days'] ?? 0),
+            'activeProcesses' => (int) ($processRow['active_processes'] ?? 0),
+            'successRate' => round($successRate, 1),
         ];
     }
 

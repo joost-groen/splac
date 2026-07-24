@@ -54,7 +54,7 @@ class SplacApiService extends ApiService {
             .then(ApiService.handleResponse);
     }
 
-    getCostStatistics() {
+    getStatistics() {
         return this.httpClient
             .get('/_action/splac/cost-statistics', { headers: this.getBasicHeaders() })
             .then(ApiService.handleResponse);

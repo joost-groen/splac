@@ -29,7 +29,8 @@ Shopware.Component.register('splac-dashboard', {
             page: 1,
             limit: 25,
             pollTimer: null,
-            costStatistics: null,
+            statistics: null,
+            showStatistics: false,
         };
     },
 
@@ -95,14 +96,14 @@ Shopware.Component.register('splac-dashboard', {
             criteria.addSorting(Criteria.sort('createdAt', 'DESC'));
 
             try {
-                const [result, costStatistics] = await Promise.all([
+                const [result, statistics] = await Promise.all([
                     this.processRepository.search(criteria, Shopware.Context.api),
-                    this.splacApiService.getCostStatistics().catch(() => this.costStatistics),
+                    this.splacApiService.getStatistics().catch(() => this.statistics),
                 ]);
                 this.processes = result;
                 this.total = result.total;
-                if (costStatistics) {
-                    this.costStatistics = costStatistics;
+                if (statistics) {
+                    this.statistics = statistics;
                 }
 
                 if (this.hasRunningProcesses) {
@@ -140,7 +141,7 @@ Shopware.Component.register('splac-dashboard', {
         },
 
         formatCost(value, currency = null) {
-            const costCurrency = currency || this.costStatistics?.currency;
+            const costCurrency = currency || this.statistics?.currency;
             if (!costCurrency) {
                 return '—';
             }
@@ -149,8 +150,22 @@ Shopware.Component.register('splac-dashboard', {
                 style: 'currency',
                 currency: costCurrency,
                 minimumFractionDigits: 2,
-                maximumFractionDigits: 6,
+                maximumFractionDigits: 2,
             }).format(Number(value) || 0);
+        },
+
+        formatNumber(value) {
+            return new Intl.NumberFormat(undefined, {
+                maximumFractionDigits: 0,
+            }).format(Number(value) || 0);
+        },
+
+        formatPercentage(value) {
+            return new Intl.NumberFormat(undefined, {
+                style: 'percent',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 1,
+            }).format((Number(value) || 0) / 100);
         },
 
         onPageChange({ page, limit }) {

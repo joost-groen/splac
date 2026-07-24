@@ -43,7 +43,7 @@ class ProductCreator
         }
         $tax = $this->loadTax($taxId, $context);
 
-        $gross = (float) ($input['price'] ?? 0.0);
+        $gross = round((float) ($input['price'] ?? 0.0), 2);
         $net = $this->grossToNet($gross, $tax->getTaxRate());
 
         $languageMap = $this->buildLanguageMap($context);
@@ -388,7 +388,7 @@ class ProductCreator
             }
 
             $ruleId = (string) ($row['ruleId'] ?? '');
-            $gross = (float) ($row['price'] ?? 0.0);
+            $gross = round((float) ($row['price'] ?? 0.0), 2);
             if ($ruleId === '' || !Uuid::isValid($ruleId) || $gross <= 0.0) {
                 continue;
             }

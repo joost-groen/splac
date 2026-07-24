@@ -7,6 +7,13 @@
         <sw-button
             variant="ghost"
             size="small"
+            @click="showStatistics = true"
+        >
+            {{ $tc('splac.dashboard.statisticsButton') }}
+        </sw-button>
+        <sw-button
+            variant="ghost"
+            size="small"
             @click="$router.push({ name: 'splac.templates' })"
         >
             {{ $tc('splac.general.menuTemplates') }}
@@ -22,33 +29,6 @@
 
     <template #content>
         <sw-card-view>
-            <sw-card
-                position-identifier="splac-dashboard-costs"
-                :title="$tc('splac.dashboard.costsTitle')"
-                :is-loading="isLoading && !costStatistics"
-            >
-                <div class="splac-dashboard__cost-tickers">
-                    <div class="splac-dashboard__cost-ticker">
-                        <span class="splac-dashboard__cost-label">{{ $tc('splac.dashboard.costLast24Hours') }}</span>
-                        <strong class="splac-dashboard__cost-value">
-                            {{ formatCost(costStatistics ? costStatistics.last24Hours : 0) }}
-                        </strong>
-                    </div>
-                    <div class="splac-dashboard__cost-ticker">
-                        <span class="splac-dashboard__cost-label">{{ $tc('splac.dashboard.costLast30Days') }}</span>
-                        <strong class="splac-dashboard__cost-value">
-                            {{ formatCost(costStatistics ? costStatistics.last30Days : 0) }}
-                        </strong>
-                    </div>
-                    <div class="splac-dashboard__cost-ticker">
-                        <span class="splac-dashboard__cost-label">{{ $tc('splac.dashboard.costAllTime') }}</span>
-                        <strong class="splac-dashboard__cost-value">
-                            {{ formatCost(costStatistics ? costStatistics.allTime : 0) }}
-                        </strong>
-                    </div>
-                </div>
-            </sw-card>
-
             <sw-card
                 position-identifier="splac-dashboard-processes"
                 :title="$tc('splac.dashboard.processesTitle')"
@@ -142,5 +122,98 @@
                 </sw-empty-state>
             </sw-card>
         </sw-card-view>
+
+        <sw-modal
+            v-if="showStatistics"
+            class="splac-dashboard__statistics-modal"
+            :title="$tc('splac.dashboard.statisticsTitle')"
+            @modal-close="showStatistics = false"
+        >
+        <div v-if="isLoading && !statistics" class="splac-dashboard__statistics-loading">
+            <sw-loader size="32px"></sw-loader>
+        </div>
+
+        <div v-else class="splac-dashboard__statistics">
+            <div class="splac-dashboard__statistics-heading">
+                <span class="splac-dashboard__statistics-eyebrow">
+                    {{ $tc('splac.dashboard.statisticsEyebrow') }}
+                </span>
+                <h3>{{ $tc('splac.dashboard.statisticsOverviewTitle') }}</h3>
+                <p>{{ $tc('splac.dashboard.statisticsOverviewHelp') }}</p>
+            </div>
+
+            <div class="splac-dashboard__metric-grid">
+                <div class="splac-dashboard__metric">
+                    <span class="splac-dashboard__metric-label">
+                        {{ $tc('splac.dashboard.totalCompleted') }}
+                    </span>
+                    <strong>{{ formatNumber(statistics ? statistics.totalCompleted : 0) }}</strong>
+                    <small>{{ $tc('splac.dashboard.totalCompletedHelp') }}</small>
+                </div>
+                <div class="splac-dashboard__metric">
+                    <span class="splac-dashboard__metric-label">
+                        {{ $tc('splac.dashboard.startedLast30Days') }}
+                    </span>
+                    <strong>{{ formatNumber(statistics ? statistics.startedLast30Days : 0) }}</strong>
+                    <small>{{ $tc('splac.dashboard.startedLast30DaysHelp') }}</small>
+                </div>
+                <div class="splac-dashboard__metric">
+                    <span class="splac-dashboard__metric-label">
+                        {{ $tc('splac.dashboard.successRate') }}
+                    </span>
+                    <strong>{{ formatPercentage(statistics ? statistics.successRate : 0) }}</strong>
+                    <small>{{ $tc('splac.dashboard.successRateHelp') }}</small>
+                </div>
+                <div class="splac-dashboard__metric">
+                    <span class="splac-dashboard__metric-label">
+                        {{ $tc('splac.dashboard.activeProcesses') }}
+                    </span>
+                    <strong>{{ formatNumber(statistics ? statistics.activeProcesses : 0) }}</strong>
+                    <small>{{ $tc('splac.dashboard.activeProcessesHelp') }}</small>
+                </div>
+            </div>
+
+            <div class="splac-dashboard__spend">
+                <div class="splac-dashboard__section-heading">
+                    <div>
+                        <h4>{{ $tc('splac.dashboard.costsTitle') }}</h4>
+                        <p>{{ $tc('splac.dashboard.costsHelp') }}</p>
+                    </div>
+                    <span class="splac-dashboard__currency">
+                        {{ statistics ? statistics.currency : '—' }}
+                    </span>
+                </div>
+
+                <div class="splac-dashboard__spend-grid">
+                    <div class="splac-dashboard__spend-item">
+                        <span>{{ $tc('splac.dashboard.costLast24Hours') }}</span>
+                        <strong>{{ formatCost(statistics ? statistics.last24Hours : 0) }}</strong>
+                    </div>
+                    <div class="splac-dashboard__spend-item">
+                        <span>{{ $tc('splac.dashboard.costLast30Days') }}</span>
+                        <strong>{{ formatCost(statistics ? statistics.last30Days : 0) }}</strong>
+                    </div>
+                    <div class="splac-dashboard__spend-item">
+                        <span>{{ $tc('splac.dashboard.costAllTime') }}</span>
+                        <strong>{{ formatCost(statistics ? statistics.allTime : 0) }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="splac-dashboard__efficiency">
+                <div>
+                    <span>{{ $tc('splac.dashboard.averageCost') }}</span>
+                    <small>{{ $tc('splac.dashboard.averageCostHelp') }}</small>
+                </div>
+                <strong>{{ formatCost(statistics ? statistics.averageCostPerCompleted : 0) }}</strong>
+            </div>
+        </div>
+
+        <template #modal-footer>
+            <sw-button size="small" @click="showStatistics = false">
+                {{ $tc('global.default.close') }}
+            </sw-button>
+        </template>
+        </sw-modal>
     </template>
 </sw-page>
