@@ -275,6 +275,9 @@ class ProcessGenerator
             $completionOptions,
         );
         $placeholderValues = \is_array($data['placeholders'] ?? null) ? $data['placeholders'] : [];
+        $blocksByLocale = \is_array($template->getConfig()['descriptionBlocks'] ?? null)
+            ? $template->getConfig()['descriptionBlocks']
+            : [];
 
         $descriptions = [];
         foreach ($locales as $locale) {
@@ -284,16 +287,21 @@ class ProcessGenerator
             }
 
             $values = \is_array($placeholderValues[$locale] ?? null) ? $placeholderValues[$locale] : [];
+            $blocks = \is_array($blocksByLocale[$locale] ?? null) ? $blocksByLocale[$locale] : [];
+            $html = $this->promptBuilder->resolveDescriptionConditionals($html, $values, $blocks);
 
-            $descriptions[$locale] = preg_replace_callback(
+            $resolvedHtml = preg_replace_callback(
                 '/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/',
-                static function (array $matches) use ($values): string {
+                function (array $matches) use ($values): string {
                     $value = $values[$matches[1]] ?? '';
 
-                    return \is_string($value) ? $value : '';
+                    return \is_string($value)
+                        ? $this->promptBuilder->sanitizeProductDescription($value)
+                        : '';
                 },
                 $html
             ) ?? $html;
+            $descriptions[$locale] = $this->promptBuilder->sanitizeProductDescription($resolvedHtml);
         }
 
         return ['description' => $descriptions];

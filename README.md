@@ -7,9 +7,11 @@ LLM generates everything else. Nothing goes live without review — the product 
 
 ## Features
 
-- **Listing templates** with a per-language HTML description structure. Wrap placeholder
-  names in double curly braces; static blocks (legal disclaimers, shipping info, …) pass
-  through untouched.
+- **Listing templates** with a per-language description builder. Text blocks support optional
+  semantic headings, rich HTML editing (lists, links, formatting, and images), and dynamic
+  values wrapped in double curly braces.
+- **Conditional description blocks** select an if/else branch from source-grounded product
+  facts, with presence, text, and numeric comparison operators.
 - **Two generation modes per text field** (SEO title/description, tags, keywords):
   *instruction* (the LLM writes the whole text) or *placeholder* (your text, only tokens are
   filled in).

@@ -2,10 +2,20 @@ import template from './splac-template-detail.html.twig';
 import './splac-template-detail.scss';
 
 const LOCALES = ['de-DE', 'en-GB'];
-const BLOCK_TYPES = ['heading', 'paragraph', 'table', 'html'];
+const BLOCK_TYPES = ['heading', 'paragraph', 'table', 'conditional', 'html'];
 const BORDER_STYLES = ['none', 'solid', 'dashed', 'dotted', 'double'];
 const HORIZONTAL_ALIGNMENTS = ['left', 'center', 'right'];
 const VERTICAL_ALIGNMENTS = ['top', 'middle', 'bottom'];
+const CONDITION_OPERATORS = [
+    'exists',
+    'notExists',
+    'equals',
+    'notEquals',
+    'contains',
+    'notContains',
+    'greaterThanOrEqual',
+    'lessThanOrEqual',
+];
 const COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
 const DEFAULT_TABLE_STYLE = Object.freeze({
@@ -106,6 +116,13 @@ const createTableStyle = (values = {}) => ({
         : DEFAULT_TABLE_STYLE.valueBackgroundColor,
 });
 
+const createTextBranch = (values = {}) => ({
+    heading: values.heading || '',
+    headingLevel: ['h2', 'h3', 'h4'].includes(values.headingLevel) ? values.headingLevel : 'h3',
+    content: values.content || '',
+    contentFormat: values.contentFormat === 'plain' ? 'plain' : 'html',
+});
+
 const createBlock = (type, values = {}) => {
     const safeType = BLOCK_TYPES.includes(type) ? type : 'paragraph';
     const block = {
@@ -127,7 +144,10 @@ const createBlock = (type, values = {}) => {
             ...block,
             contentMode: values.contentMode || (String(values.content || '').includes('{{') ? 'placeholder' : 'static'),
             content: values.content || '',
+            contentFormat: values.contentFormat || (values.id ? 'plain' : 'html'),
             instruction: values.instruction || '',
+            heading: values.heading || '',
+            headingLevel: ['h2', 'h3', 'h4'].includes(values.headingLevel) ? values.headingLevel : 'h3',
         };
     }
     if (safeType === 'table') {
@@ -136,6 +156,20 @@ const createBlock = (type, values = {}) => {
             title: values.title || '',
             rows: Array.isArray(values.rows) ? values.rows.map((row) => createTableRow(row)) : [],
             tableStyle: createTableStyle(values.tableStyle),
+        };
+    }
+    if (safeType === 'conditional') {
+        const condition = values.condition || {};
+
+        return {
+            ...block,
+            condition: {
+                field: normalizePlaceholder(condition.field || ''),
+                operator: CONDITION_OPERATORS.includes(condition.operator) ? condition.operator : 'exists',
+                value: condition.value || '',
+            },
+            thenBranch: createTextBranch(values.thenBranch),
+            elseBranch: createTextBranch(values.elseBranch),
         };
     }
 
@@ -194,6 +228,11 @@ Shopware.Component.register('splac-template-detail', {
             isSaving: false,
             locales: LOCALES,
             activeDescriptionLocale: LOCALES[0],
+            imageEditorTarget: null,
+            imageUrl: '',
+            imageAlt: '',
+            imageMediaId: null,
+            isResolvingImage: false,
         };
     },
 
@@ -251,6 +290,13 @@ Shopware.Component.register('splac-template-detail', {
                 { value: 'generated', label: this.$tc('splac.templateDetail.blockModeGenerated') },
                 { value: 'placeholder', label: this.$tc('splac.templateDetail.blockModePlaceholder') },
             ];
+        },
+
+        conditionOperatorOptions() {
+            return CONDITION_OPERATORS.map((value) => ({
+                value,
+                label: this.$tc(`splac.templateDetail.conditionOperator.${value}`),
+            }));
         },
 
         featureList() {
@@ -344,6 +390,12 @@ Shopware.Component.register('splac-template-detail', {
             if (!this.item.name) {
                 this.createNotificationError({
                     message: this.$tc('splac.templateDetail.errorNameRequired'),
+                });
+                return;
+            }
+            if (this.hasInvalidCondition()) {
+                this.createNotificationError({
+                    message: this.$tc('splac.templateDetail.errorConditionIncomplete'),
                 });
                 return;
             }
@@ -468,6 +520,10 @@ Shopware.Component.register('splac-template-detail', {
         },
 
         insertBlockPlaceholder(block) {
+            this.insertTextPlaceholder(block);
+        },
+
+        insertTextPlaceholder(target) {
             const value = window.prompt(this.$tc('splac.templateDetail.placeholderPrompt'));
             const placeholder = this.normalizePlaceholder(value);
             if (!placeholder) {
@@ -475,7 +531,105 @@ Shopware.Component.register('splac-template-detail', {
             }
 
             const token = `{{${placeholder}}}`;
-            block.content = block.content ? `${block.content} ${token}` : token;
+            target.content = target.content ? `${target.content} ${token}` : token;
+        },
+
+        updateRichText(target, value) {
+            target.content = value || '';
+            target.contentFormat = 'html';
+        },
+
+        richTextEditorValue(target) {
+            if (target?.contentFormat !== 'plain') {
+                return target?.content || '';
+            }
+
+            return this.escapeHtml(target.content).replace(/\n/g, '<br>');
+        },
+
+        openImageEditor(target) {
+            this.imageEditorTarget = target;
+            this.imageUrl = '';
+            this.imageAlt = '';
+            this.imageMediaId = null;
+        },
+
+        closeImageEditor() {
+            this.imageEditorTarget = null;
+            this.imageUrl = '';
+            this.imageAlt = '';
+            this.imageMediaId = null;
+            this.isResolvingImage = false;
+        },
+
+        async insertImage() {
+            if (!this.imageEditorTarget) {
+                return;
+            }
+
+            const target = this.imageEditorTarget;
+            this.isResolvingImage = true;
+            let imageUrl = String(this.imageUrl || '').trim();
+
+            try {
+                if (this.imageMediaId) {
+                    const media = await this.repositoryFactory
+                        .create('media')
+                        .get(this.imageMediaId, Shopware.Context.api);
+                    imageUrl = String(media?.url || '').trim();
+                }
+            } catch (error) {
+                this.createNotificationError({
+                    message: error?.message || this.$tc('splac.templateDetail.imageMediaLoadError'),
+                });
+                this.isResolvingImage = false;
+                return;
+            }
+
+            if (this.imageEditorTarget !== target) {
+                return;
+            }
+
+            if (!this.isAllowedImageUrl(imageUrl)) {
+                this.createNotificationError({
+                    message: this.$tc('splac.templateDetail.imageUrlInvalid'),
+                });
+                this.isResolvingImage = false;
+                return;
+            }
+
+            const image = `<figure><img src="${this.escapeHtml(imageUrl)}" alt="${this.escapeHtml(this.imageAlt)}" loading="lazy"></figure>`;
+            const existingContent = this.richTextEditorValue(target);
+            target.content = existingContent
+                ? `${existingContent}${image}`
+                : image;
+            target.contentFormat = 'html';
+            this.closeImageEditor();
+        },
+
+        isAllowedImageUrl(value) {
+            const url = String(value || '').trim();
+
+            return /^(https?:\/\/|\/(?!\/))/i.test(url);
+        },
+
+        conditionNeedsValue(operator) {
+            return !['exists', 'notExists'].includes(operator);
+        },
+
+        hasInvalidCondition() {
+            return LOCALES.some((locale) => (
+                (this.item?.config?.descriptionBlocks?.[locale] || []).some((block) => (
+                    block.type === 'conditional'
+                    && (
+                        !this.normalizePlaceholder(block.condition?.field)
+                        || (
+                            this.conditionNeedsValue(block.condition?.operator)
+                            && !String(block.condition?.value || '').trim()
+                        )
+                    )
+                ))
+            ));
         },
 
         blockTypeLabel(type) {
@@ -515,6 +669,12 @@ Shopware.Component.register('splac-template-detail', {
                 blocks.forEach((block) => {
                     if (block.type === 'table') {
                         block.tableStyle = createTableStyle(block.tableStyle);
+                    }
+                    if (block.type === 'conditional') {
+                        block.condition.field = this.normalizePlaceholder(block.condition.field);
+                        if (!CONDITION_OPERATORS.includes(block.condition.operator)) {
+                            block.condition.operator = 'exists';
+                        }
                     }
                 });
             });
@@ -571,9 +731,35 @@ Shopware.Component.register('splac-template-detail', {
             }
 
             if (block.type === 'paragraph') {
-                return `<p${blockStyle}>${block.contentMode === 'generated'
+                const body = block.contentMode === 'generated'
                     ? content
-                    : this.escapeHtml(content).replace(/\n/g, '<br>')}</p>`;
+                    : this.renderRichText(block);
+                const heading = this.renderOptionalHeading(block);
+
+                if (heading) {
+                    return `<section${blockStyle}>${heading}<div>${body}</div></section>`;
+                }
+
+                return `<div${blockStyle}>${body}</div>`;
+            }
+
+            if (block.type === 'conditional') {
+                const id = String(block.id || '').replace(/[^a-zA-Z0-9_.-]/g, '_');
+                const field = this.normalizePlaceholder(block.condition?.field);
+                const thenBranch = this.renderTextBranch(block.thenBranch, blockStyle);
+                const elseBranch = this.renderTextBranch(block.elseBranch, blockStyle);
+                const conditionValue = field
+                    ? `<!-- splac-condition:${id}:{{${field}}} -->\n`
+                    : '';
+
+                return [
+                    conditionValue,
+                    `<!-- splac-if:${id} -->`,
+                    thenBranch,
+                    `<!-- splac-else:${id} -->`,
+                    elseBranch,
+                    `<!-- splac-endif:${id} -->`,
+                ].filter((line) => line !== '').join('\n');
             }
 
             if (block.type === 'table') {
@@ -688,6 +874,34 @@ Shopware.Component.register('splac-template-detail', {
             }
 
             return legacyHtml;
+        },
+
+        renderTextBranch(branch, blockStyle = '') {
+            const heading = this.renderOptionalHeading(branch);
+            const body = this.renderRichText(branch);
+
+            return `<section${blockStyle}>${heading}<div>${body}</div></section>`;
+        },
+
+        renderOptionalHeading(target) {
+            if (!target?.heading) {
+                return '';
+            }
+
+            const level = ['h2', 'h3', 'h4'].includes(target.headingLevel)
+                ? target.headingLevel
+                : 'h3';
+
+            return `<${level}>${this.escapeHtml(target.heading)}</${level}>`;
+        },
+
+        renderRichText(target) {
+            const content = String(target?.content || '');
+            if (target?.contentFormat === 'plain') {
+                return this.escapeHtml(content).replace(/\n/g, '<br>');
+            }
+
+            return this.$sanitize(content, { ADD_ATTR: ['target', 'loading'] });
         },
 
         generatedBlockPlaceholder(block) {

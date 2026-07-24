@@ -53,7 +53,9 @@
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
         </service>
 
-        <service id="Splac\Service\Llm\PromptBuilder"/>
+        <service id="Splac\Service\Llm\PromptBuilder">
+            <argument type="service" id="Shopware\Core\Framework\Util\HtmlSanitizer"/>
+        </service>
 
         <!-- Services -->
         <service id="Splac\Service\PdfTextExtractor"/>

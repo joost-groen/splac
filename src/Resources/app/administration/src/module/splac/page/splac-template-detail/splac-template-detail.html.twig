@@ -257,6 +257,9 @@
                         <sw-button size="small" @click="addDescriptionBlock('table')">
                             + {{ $tc('splac.templateDetail.blockType.table') }}
                         </sw-button>
+                        <sw-button size="small" @click="addDescriptionBlock('conditional')">
+                            + {{ $tc('splac.templateDetail.blockType.conditional') }}
+                        </sw-button>
                     </div>
                 </div>
 
@@ -342,6 +345,20 @@
                             <div
                                 v-else-if="block.type === 'paragraph'"
                             >
+                                <div class="splac-template-detail__optional-heading">
+                                    <sw-text-field
+                                        v-model:value="block.heading"
+                                        :label="$tc('splac.templateDetail.optionalHeading')"
+                                        :placeholder="$tc('splac.templateDetail.optionalHeadingPlaceholder')"
+                                        :help-text="$tc('splac.templateDetail.optionalHeadingHelp')"
+                                    ></sw-text-field>
+                                    <sw-select-field
+                                        v-if="block.heading"
+                                        v-model="block.headingLevel"
+                                        :label="$tc('splac.templateDetail.headingLevel')"
+                                        :options="headingLevelOptions"
+                                    ></sw-select-field>
+                                </div>
                                 <sw-select-field
                                     v-model="block.contentMode"
                                     :label="$tc('splac.templateDetail.blockContentMode')"
@@ -354,21 +371,39 @@
                                     :placeholder="$tc('splac.templateDetail.paragraphInstructionPlaceholder')"
                                     :help-text="$tc('splac.templateDetail.blockInstructionHelp')"
                                 ></sw-textarea-field>
-                                <sw-textarea-field
+                                <sw-text-editor
                                     v-else
-                                    v-model="block.content"
+                                    :value="richTextEditorValue(block)"
                                     :label="$tc('splac.templateDetail.paragraphText')"
-                                    :help-text="block.contentMode === 'placeholder'
-                                        ? $tc('splac.templateDetail.inlinePlaceholderHelp')
-                                        : $tc('splac.templateDetail.staticTextHelp')"
-                                ></sw-textarea-field>
-                                <sw-button
-                                    v-if="block.contentMode === 'placeholder'"
-                                    size="small"
-                                    @click="insertBlockPlaceholder(block)"
+                                    sanitize-input
+                                    sanitize-field-name="product_translation.description"
+                                    @update:value="updateRichText(block, $event)"
+                                ></sw-text-editor>
+                                <p
+                                    v-if="block.contentMode !== 'generated'"
+                                    class="splac-template-detail__rich-text-help"
                                 >
-                                    + {{ $tc('splac.templateDetail.insertPlaceholder') }}
-                                </sw-button>
+                                    {{
+                                        block.contentMode === 'placeholder'
+                                            ? $tc('splac.templateDetail.inlinePlaceholderHelp')
+                                            : $tc('splac.templateDetail.richTextHelp')
+                                    }}
+                                </p>
+                                <div
+                                    v-if="block.contentMode !== 'generated'"
+                                    class="splac-template-detail__rich-text-actions"
+                                >
+                                    <sw-button
+                                        v-if="block.contentMode === 'placeholder'"
+                                        size="small"
+                                        @click="insertBlockPlaceholder(block)"
+                                    >
+                                        + {{ $tc('splac.templateDetail.insertPlaceholder') }}
+                                    </sw-button>
+                                    <sw-button size="small" @click="openImageEditor(block)">
+                                        + {{ $tc('splac.templateDetail.insertImage') }}
+                                    </sw-button>
+                                </div>
                             </div>
 
                             <div v-else-if="block.type === 'table'">
@@ -651,6 +686,106 @@
                                 </sw-button>
                             </div>
 
+                            <div v-else-if="block.type === 'conditional'">
+                                <div class="splac-template-detail__condition-config">
+                                    <div class="splac-template-detail__condition-heading">
+                                        <strong>{{ $tc('splac.templateDetail.conditionTitle') }}</strong>
+                                        <span>{{ $tc('splac.templateDetail.conditionHelp') }}</span>
+                                    </div>
+                                    <div class="splac-template-detail__condition-fields">
+                                        <sw-text-field
+                                            v-model:value="block.condition.field"
+                                            :label="$tc('splac.templateDetail.conditionField')"
+                                            :placeholder="$tc('splac.templateDetail.conditionFieldPlaceholder')"
+                                            :help-text="$tc('splac.templateDetail.conditionFieldHelp')"
+                                        ></sw-text-field>
+                                        <sw-select-field
+                                            v-model="block.condition.operator"
+                                            :label="$tc('splac.templateDetail.conditionOperatorLabel')"
+                                            :options="conditionOperatorOptions"
+                                        ></sw-select-field>
+                                        <sw-text-field
+                                            v-if="conditionNeedsValue(block.condition.operator)"
+                                            v-model:value="block.condition.value"
+                                            :label="$tc('splac.templateDetail.conditionValue')"
+                                            :placeholder="$tc('splac.templateDetail.conditionValuePlaceholder')"
+                                        ></sw-text-field>
+                                    </div>
+                                </div>
+
+                                <div class="splac-template-detail__condition-branches">
+                                    <section class="splac-template-detail__condition-branch splac-template-detail__condition-branch--then">
+                                        <header>
+                                            <span>{{ $tc('splac.templateDetail.conditionThenBadge') }}</span>
+                                            <strong>{{ $tc('splac.templateDetail.conditionThen') }}</strong>
+                                        </header>
+                                        <div class="splac-template-detail__optional-heading">
+                                            <sw-text-field
+                                                v-model:value="block.thenBranch.heading"
+                                                :label="$tc('splac.templateDetail.optionalHeading')"
+                                                :placeholder="$tc('splac.templateDetail.optionalHeadingPlaceholder')"
+                                            ></sw-text-field>
+                                            <sw-select-field
+                                                v-if="block.thenBranch.heading"
+                                                v-model="block.thenBranch.headingLevel"
+                                                :label="$tc('splac.templateDetail.headingLevel')"
+                                                :options="headingLevelOptions"
+                                            ></sw-select-field>
+                                        </div>
+                                        <sw-text-editor
+                                            :value="richTextEditorValue(block.thenBranch)"
+                                            :label="$tc('splac.templateDetail.conditionBranchContent')"
+                                            sanitize-input
+                                            sanitize-field-name="product_translation.description"
+                                            @update:value="updateRichText(block.thenBranch, $event)"
+                                        ></sw-text-editor>
+                                        <div class="splac-template-detail__rich-text-actions">
+                                            <sw-button size="small" @click="insertTextPlaceholder(block.thenBranch)">
+                                                + {{ $tc('splac.templateDetail.insertPlaceholder') }}
+                                            </sw-button>
+                                            <sw-button size="small" @click="openImageEditor(block.thenBranch)">
+                                                + {{ $tc('splac.templateDetail.insertImage') }}
+                                            </sw-button>
+                                        </div>
+                                    </section>
+
+                                    <section class="splac-template-detail__condition-branch splac-template-detail__condition-branch--else">
+                                        <header>
+                                            <span>{{ $tc('splac.templateDetail.conditionElseBadge') }}</span>
+                                            <strong>{{ $tc('splac.templateDetail.conditionElse') }}</strong>
+                                        </header>
+                                        <div class="splac-template-detail__optional-heading">
+                                            <sw-text-field
+                                                v-model:value="block.elseBranch.heading"
+                                                :label="$tc('splac.templateDetail.optionalHeading')"
+                                                :placeholder="$tc('splac.templateDetail.optionalHeadingPlaceholder')"
+                                            ></sw-text-field>
+                                            <sw-select-field
+                                                v-if="block.elseBranch.heading"
+                                                v-model="block.elseBranch.headingLevel"
+                                                :label="$tc('splac.templateDetail.headingLevel')"
+                                                :options="headingLevelOptions"
+                                            ></sw-select-field>
+                                        </div>
+                                        <sw-text-editor
+                                            :value="richTextEditorValue(block.elseBranch)"
+                                            :label="$tc('splac.templateDetail.conditionBranchContent')"
+                                            sanitize-input
+                                            sanitize-field-name="product_translation.description"
+                                            @update:value="updateRichText(block.elseBranch, $event)"
+                                        ></sw-text-editor>
+                                        <div class="splac-template-detail__rich-text-actions">
+                                            <sw-button size="small" @click="insertTextPlaceholder(block.elseBranch)">
+                                                + {{ $tc('splac.templateDetail.insertPlaceholder') }}
+                                            </sw-button>
+                                            <sw-button size="small" @click="openImageEditor(block.elseBranch)">
+                                                + {{ $tc('splac.templateDetail.insertImage') }}
+                                            </sw-button>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+
                             <div v-else>
                                 <sw-alert variant="info">
                                     {{ $tc('splac.templateDetail.legacyHtmlHint') }}
@@ -679,6 +814,48 @@
                         {{ $tc('splac.templateDetail.previewEmpty') }}
                     </p>
                 </div>
+
+                <sw-modal
+                    v-if="imageEditorTarget"
+                    :title="$tc('splac.templateDetail.insertImageTitle')"
+                    @modal-close="closeImageEditor"
+                >
+                    <p class="splac-template-detail__image-help">
+                        {{ $tc('splac.templateDetail.insertImageHelp') }}
+                    </p>
+                    <sw-media-field
+                        v-model:value="imageMediaId"
+                        :label="$tc('splac.templateDetail.imageMedia')"
+                        single-select
+                    ></sw-media-field>
+                    <div class="splac-template-detail__image-divider">
+                        <span>{{ $tc('splac.templateDetail.imageOrUrl') }}</span>
+                    </div>
+                    <sw-text-field
+                        v-model:value="imageUrl"
+                        :label="$tc('splac.templateDetail.imageUrl')"
+                        placeholder="https://example.com/product.jpg"
+                    ></sw-text-field>
+                    <sw-text-field
+                        v-model:value="imageAlt"
+                        :label="$tc('splac.templateDetail.imageAlt')"
+                        :help-text="$tc('splac.templateDetail.imageAltHelp')"
+                    ></sw-text-field>
+
+                    <template #modal-footer>
+                        <sw-button size="small" @click="closeImageEditor">
+                            {{ $tc('global.default.cancel') }}
+                        </sw-button>
+                        <sw-button
+                            variant="primary"
+                            size="small"
+                            :is-loading="isResolvingImage"
+                            @click="insertImage"
+                        >
+                            {{ $tc('splac.templateDetail.insertImage') }}
+                        </sw-button>
+                    </template>
+                </sw-modal>
             </sw-card>
 
             <sw-card

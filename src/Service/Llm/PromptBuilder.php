@@ -2,6 +2,8 @@
 
 namespace Splac\Service\Llm;
 
+use Shopware\Core\Framework\Util\HtmlSanitizer;
+
 /**
  * Builds the prompts for every generation step. All prompts share the same
  * ground rule: only facts present in the provided sources may be used and
@@ -13,6 +15,10 @@ class PromptBuilder
         'de-DE' => 'German',
         'en-GB' => 'English',
     ];
+
+    public function __construct(private readonly HtmlSanitizer $htmlSanitizer)
+    {
+    }
 
     public function buildSystemPrompt(): string
     {
@@ -129,6 +135,7 @@ The description templates per language (JSON, locale => HTML). Everything that i
 Placeholders to fill: {$placeholderList}
 
 CONTENT RULES:
+- A placeholder inside an HTML comment beginning with "splac-condition:" is a source fact used to evaluate an if/else block. Return the exact, compact source value without marketing copy; use an empty string when the fact is absent.
 - Treat specification tables as the quick-reference source of truth for exact product data.
 - Table-cell placeholders must be compact and scannable: normally only the value, unit, and a short qualifier. Do not repeat the row label, write full sentences, add sales language, or combine unrelated specifications.
 - Use plain text for a single table value. Use <br> for two closely related values, or <ul><li>...</li></ul> only when three or more distinct items genuinely benefit from a list. Never return a nested <table>.
@@ -422,8 +429,40 @@ PROMPT;
             if ($type === 'paragraph') {
                 $value = $contentMode === 'generated'
                     ? $content
-                    : str_replace(["\r\n", "\r", "\n"], '<br>', $this->escapeHtml($content));
-                $html[] = "<p{$blockStyle}>{$value}</p>";
+                    : $this->renderConfiguredRichText($block);
+                $heading = $this->renderOptionalHeading($block);
+                $html[] = $heading !== ''
+                    ? "<section{$blockStyle}>{$heading}<div>{$value}</div></section>"
+                    : "<div{$blockStyle}>{$value}</div>";
+                continue;
+            }
+
+            if ($type === 'conditional') {
+                $id = preg_replace(
+                    '/[^a-zA-Z0-9_.-]/',
+                    '_',
+                    (string) ($block['id'] ?? '')
+                ) ?? '';
+                if ($id === '') {
+                    continue;
+                }
+
+                $condition = \is_array($block['condition'] ?? null) ? $block['condition'] : [];
+                $field = $this->normalizePlaceholder((string) ($condition['field'] ?? ''));
+                if ($field !== '') {
+                    $html[] = '<!-- splac-condition:' . $id . ':{{' . $field . '}} -->';
+                }
+                $html[] = "<!-- splac-if:{$id} -->";
+                $html[] = $this->renderTextBranch(
+                    \is_array($block['thenBranch'] ?? null) ? $block['thenBranch'] : [],
+                    $blockStyle,
+                );
+                $html[] = "<!-- splac-else:{$id} -->";
+                $html[] = $this->renderTextBranch(
+                    \is_array($block['elseBranch'] ?? null) ? $block['elseBranch'] : [],
+                    $blockStyle,
+                );
+                $html[] = "<!-- splac-endif:{$id} -->";
                 continue;
             }
 
@@ -446,6 +485,153 @@ PROMPT;
         }
 
         return implode("\n", $html);
+    }
+
+    /**
+     * Selects the configured branch for each conditional block.
+     *
+     * @param array<string, mixed> $placeholderValues
+     * @param list<mixed> $blocks
+     */
+    public function resolveDescriptionConditionals(
+        string $html,
+        array $placeholderValues,
+        array $blocks,
+    ): string {
+        $conditions = [];
+        foreach ($blocks as $block) {
+            if (!\is_array($block) || ($block['type'] ?? null) !== 'conditional') {
+                continue;
+            }
+
+            $id = preg_replace('/[^a-zA-Z0-9_.-]/', '_', (string) ($block['id'] ?? '')) ?? '';
+            if ($id === '') {
+                continue;
+            }
+
+            $conditions[$id] = \is_array($block['condition'] ?? null) ? $block['condition'] : [];
+        }
+
+        $resolved = preg_replace_callback(
+            '~<!--\s*splac-if:([a-zA-Z0-9_.-]+)\s*-->(.*?)'
+            . '<!--\s*splac-else:\1\s*-->(.*?)'
+            . '<!--\s*splac-endif:\1\s*-->~s',
+            function (array $matches) use ($conditions, $placeholderValues): string {
+                $condition = $conditions[$matches[1]] ?? [];
+
+                return $this->conditionMatches($condition, $placeholderValues)
+                    ? $matches[2]
+                    : $matches[3];
+            },
+            $html
+        ) ?? $html;
+
+        return preg_replace(
+            '~<!--\s*splac-condition:[^>]*-->~',
+            '',
+            $resolved
+        ) ?? $resolved;
+    }
+
+    public function sanitizeProductDescription(string $html): string
+    {
+        return $this->htmlSanitizer->sanitize(
+            $html,
+            [],
+            false,
+            'product_translation.description'
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $block
+     */
+    private function renderConfiguredRichText(array $block): string
+    {
+        $content = (string) ($block['content'] ?? '');
+        if (($block['contentFormat'] ?? 'plain') === 'plain') {
+            return str_replace(["\r\n", "\r", "\n"], '<br>', $this->escapeHtml($content));
+        }
+
+        return $this->sanitizeProductDescription($content);
+    }
+
+    /**
+     * @param array<string, mixed> $target
+     */
+    private function renderOptionalHeading(array $target): string
+    {
+        $heading = (string) ($target['heading'] ?? '');
+        if ($heading === '') {
+            return '';
+        }
+
+        $level = \in_array($target['headingLevel'] ?? null, ['h2', 'h3', 'h4'], true)
+            ? (string) $target['headingLevel']
+            : 'h3';
+
+        return "<{$level}>" . $this->escapeHtml($heading) . "</{$level}>";
+    }
+
+    /**
+     * @param array<string, mixed> $branch
+     */
+    private function renderTextBranch(array $branch, string $blockStyle): string
+    {
+        $heading = $this->renderOptionalHeading($branch);
+        $content = $this->renderConfiguredRichText($branch);
+
+        return "<section{$blockStyle}>{$heading}<div>{$content}</div></section>";
+    }
+
+    /**
+     * @param array<string, mixed> $condition
+     * @param array<string, mixed> $placeholderValues
+     */
+    private function conditionMatches(array $condition, array $placeholderValues): bool
+    {
+        $field = $this->normalizePlaceholder((string) ($condition['field'] ?? ''));
+        $actual = $field !== '' && \is_string($placeholderValues[$field] ?? null)
+            ? trim(strip_tags(html_entity_decode($placeholderValues[$field], \ENT_QUOTES | \ENT_HTML5)))
+            : '';
+        $expected = trim((string) ($condition['value'] ?? ''));
+        $operator = (string) ($condition['operator'] ?? 'exists');
+
+        $actualFolded = $this->foldCase($actual);
+        $expectedFolded = $this->foldCase($expected);
+
+        return match ($operator) {
+            'notExists' => $actual === '',
+            'equals' => $actual !== '' && $expected !== '' && $actualFolded === $expectedFolded,
+            'notEquals' => $actual !== '' && $expected !== '' && $actualFolded !== $expectedFolded,
+            'contains' => $actual !== '' && $expected !== ''
+                && str_contains($actualFolded, $expectedFolded),
+            'notContains' => $actual !== '' && $expected !== ''
+                && !str_contains($actualFolded, $expectedFolded),
+            'greaterThanOrEqual' => $this->numericValue($actual) !== null
+                && $this->numericValue($expected) !== null
+                && $this->numericValue($actual) >= $this->numericValue($expected),
+            'lessThanOrEqual' => $this->numericValue($actual) !== null
+                && $this->numericValue($expected) !== null
+                && $this->numericValue($actual) <= $this->numericValue($expected),
+            default => $actual !== '',
+        };
+    }
+
+    private function foldCase(string $value): string
+    {
+        return \function_exists('mb_strtolower')
+            ? mb_strtolower($value, 'UTF-8')
+            : strtolower($value);
+    }
+
+    private function numericValue(string $value): ?float
+    {
+        if (preg_match('/[-+]?\d+(?:[.,]\d+)?/', $value, $matches) !== 1) {
+            return null;
+        }
+
+        return (float) str_replace(',', '.', $matches[0]);
     }
 
     /**
