@@ -19,17 +19,17 @@ PROMPT;
     public function getName(): string;
 
     /**
-     * Sends a chat completion request and returns the raw text answer.
+     * Sends a chat completion request and returns its text and provider-reported usage.
      * Implementations should request JSON output from the provider where supported.
      *
      * @throws LlmException
      */
-    public function complete(string $apiKey, string $model, string $systemPrompt, string $userPrompt): string;
+    public function complete(string $apiKey, string $model, string $systemPrompt, string $userPrompt): LlmResponse;
 
     /**
      * Sends raw PDF bytes directly to the provider and returns its OCR/document transcription.
      *
      * @throws LlmException
      */
-    public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): string;
+    public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): LlmResponse;
 }

@@ -39,6 +39,10 @@ class ProcessEntity extends Entity
 
     protected ?string $errorMessage = null;
 
+    protected float $llmCost = 0.0;
+
+    protected string $llmCostCurrency = 'EUR';
+
     protected ?TemplateEntity $template = null;
 
     protected ?CategoryTemplateEntity $categoryTemplate = null;
@@ -157,6 +161,26 @@ class ProcessEntity extends Entity
     public function setErrorMessage(?string $errorMessage): void
     {
         $this->errorMessage = $errorMessage;
+    }
+
+    public function getLlmCost(): float
+    {
+        return $this->llmCost;
+    }
+
+    public function setLlmCost(float $llmCost): void
+    {
+        $this->llmCost = $llmCost;
+    }
+
+    public function getLlmCostCurrency(): string
+    {
+        return $this->llmCostCurrency;
+    }
+
+    public function setLlmCostCurrency(string $llmCostCurrency): void
+    {
+        $this->llmCostCurrency = $llmCostCurrency;
     }
 
     public function getTemplate(): ?TemplateEntity

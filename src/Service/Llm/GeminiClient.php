@@ -20,7 +20,7 @@ class GeminiClient implements LlmClientInterface
         return 'gemini';
     }
 
-    public function complete(string $apiKey, string $model, string $systemPrompt, string $userPrompt): string
+    public function complete(string $apiKey, string $model, string $systemPrompt, string $userPrompt): LlmResponse
     {
         $url = \sprintf(
             'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
@@ -125,10 +125,14 @@ class GeminiClient implements LlmClientInterface
             throw new LlmException('Gemini returned an empty response');
         }
 
-        return $content;
+        return new LlmResponse(
+            $content,
+            $this->usageValue($data, 'promptTokenCount'),
+            $this->usageValue($data, 'candidatesTokenCount') + $this->usageValue($data, 'thoughtsTokenCount'),
+        );
     }
 
-    public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): string
+    public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): LlmResponse
     {
         $url = \sprintf(
             'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
@@ -186,6 +190,20 @@ class GeminiClient implements LlmClientInterface
             throw new LlmException('Gemini returned an empty PDF OCR response');
         }
 
-        return $text;
+        return new LlmResponse(
+            $text,
+            $this->usageValue($data, 'promptTokenCount'),
+            $this->usageValue($data, 'candidatesTokenCount') + $this->usageValue($data, 'thoughtsTokenCount'),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function usageValue(array $data, string $key): int
+    {
+        $value = $data['usageMetadata'][$key] ?? 0;
+
+        return \is_int($value) ? max(0, $value) : 0;
     }
 }

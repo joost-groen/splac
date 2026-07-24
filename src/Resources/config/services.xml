@@ -45,6 +45,12 @@
         <service id="Splac\Service\Llm\LlmService">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
             <argument type="tagged_iterator" tag="splac.llm_client"/>
+            <argument type="service" id="Splac\Service\Llm\LlmUsageService"/>
+        </service>
+
+        <service id="Splac\Service\Llm\LlmUsageService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
         </service>
 
         <service id="Splac\Service\Llm\PromptBuilder"/>
@@ -116,6 +122,7 @@
             <argument type="service" id="messenger.default_bus"/>
             <argument type="service" id="Splac\Service\ProductCreator"/>
             <argument type="service" id="Splac\Service\ProcessGenerator"/>
+            <argument type="service" id="Splac\Service\Llm\LlmUsageService"/>
         </service>
     </services>
 </container>

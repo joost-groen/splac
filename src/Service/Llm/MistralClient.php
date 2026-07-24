@@ -16,7 +16,7 @@ class MistralClient implements LlmClientInterface
         return 'mistral';
     }
 
-    public function complete(string $apiKey, string $model, string $systemPrompt, string $userPrompt): string
+    public function complete(string $apiKey, string $model, string $systemPrompt, string $userPrompt): LlmResponse
     {
         try {
             $response = $this->httpClient->request('POST', 'https://api.mistral.ai/v1/chat/completions', [
@@ -46,10 +46,14 @@ class MistralClient implements LlmClientInterface
             throw new LlmException('Mistral returned an empty response');
         }
 
-        return $content;
+        return new LlmResponse(
+            $content,
+            $this->usageValue($data, 'prompt_tokens'),
+            $this->usageValue($data, 'completion_tokens'),
+        );
     }
 
-    public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): string
+    public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): LlmResponse
     {
         try {
             $response = $this->httpClient->request('POST', 'https://api.mistral.ai/v1/ocr', [
@@ -93,6 +97,23 @@ class MistralClient implements LlmClientInterface
             throw new LlmException('Mistral returned an empty PDF OCR response');
         }
 
-        return $text;
+        $pagesProcessed = $data['usage_info']['pages_processed'] ?? \count($parts);
+
+        return new LlmResponse(
+            $text,
+            0,
+            0,
+            \is_int($pagesProcessed) ? max(0, $pagesProcessed) : \count($parts),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function usageValue(array $data, string $key): int
+    {
+        $value = $data['usage'][$key] ?? 0;
+
+        return \is_int($value) ? max(0, $value) : 0;
     }
 }

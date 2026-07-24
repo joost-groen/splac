@@ -5,6 +5,7 @@ namespace Splac\Core\Content\Process;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\FloatField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
@@ -69,6 +70,8 @@ class ProcessDefinition extends EntityDefinition
             // generated output per field, incl. per-field status/source flags
             new JsonField('output', 'output', [], []),
             new LongTextField('error_message', 'errorMessage'),
+            new FloatField('llm_cost', 'llmCost'),
+            new StringField('llm_cost_currency', 'llmCostCurrency'),
             new ManyToOneAssociationField('template', 'template_id', TemplateDefinition::class, 'id'),
             new ManyToOneAssociationField('categoryTemplate', 'category_template_id', CategoryTemplateDefinition::class, 'id'),
             new ManyToOneAssociationField('product', 'product_id', ProductDefinition::class, 'id'),

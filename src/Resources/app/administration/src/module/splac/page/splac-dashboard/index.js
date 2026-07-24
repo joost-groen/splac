@@ -29,6 +29,7 @@ Shopware.Component.register('splac-dashboard', {
             page: 1,
             limit: 25,
             pollTimer: null,
+            costStatistics: null,
         };
     },
 
@@ -60,6 +61,12 @@ Shopware.Component.register('splac-dashboard', {
                     label: this.$tc('splac.dashboard.columnCreatedAt'),
                     allowResize: true,
                 },
+                {
+                    property: 'llmCost',
+                    label: this.$tc('splac.dashboard.columnCost'),
+                    allowResize: true,
+                    align: 'right',
+                },
             ];
         },
 
@@ -88,9 +95,15 @@ Shopware.Component.register('splac-dashboard', {
             criteria.addSorting(Criteria.sort('createdAt', 'DESC'));
 
             try {
-                const result = await this.processRepository.search(criteria, Shopware.Context.api);
+                const [result, costStatistics] = await Promise.all([
+                    this.processRepository.search(criteria, Shopware.Context.api),
+                    this.splacApiService.getCostStatistics().catch(() => this.costStatistics),
+                ]);
                 this.processes = result;
                 this.total = result.total;
+                if (costStatistics) {
+                    this.costStatistics = costStatistics;
+                }
 
                 if (this.hasRunningProcesses) {
                     this.startPolling();
@@ -124,6 +137,20 @@ Shopware.Component.register('splac-dashboard', {
 
         statusLabel(status) {
             return this.$tc(`splac.status.${status}`);
+        },
+
+        formatCost(value, currency = null) {
+            const costCurrency = currency || this.costStatistics?.currency;
+            if (!costCurrency) {
+                return '—';
+            }
+
+            return new Intl.NumberFormat(undefined, {
+                style: 'currency',
+                currency: costCurrency,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 6,
+            }).format(Number(value) || 0);
         },
 
         onPageChange({ page, limit }) {

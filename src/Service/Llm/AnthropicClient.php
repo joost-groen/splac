@@ -16,7 +16,7 @@ class AnthropicClient implements LlmClientInterface
         return 'anthropic';
     }
 
-    public function complete(string $apiKey, string $model, string $systemPrompt, string $userPrompt): string
+    public function complete(string $apiKey, string $model, string $systemPrompt, string $userPrompt): LlmResponse
     {
         try {
             $response = $this->httpClient->request('POST', 'https://api.anthropic.com/v1/messages', [
@@ -47,10 +47,14 @@ class AnthropicClient implements LlmClientInterface
             throw new LlmException('Anthropic returned an empty response');
         }
 
-        return $content;
+        return new LlmResponse(
+            $content,
+            $this->usageValue($data, 'input_tokens'),
+            $this->usageValue($data, 'output_tokens'),
+        );
     }
 
-    public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): string
+    public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): LlmResponse
     {
         try {
             $response = $this->httpClient->request('POST', 'https://api.anthropic.com/v1/messages', [
@@ -101,6 +105,20 @@ class AnthropicClient implements LlmClientInterface
             throw new LlmException('Anthropic returned an empty PDF OCR response');
         }
 
-        return $text;
+        return new LlmResponse(
+            $text,
+            $this->usageValue($data, 'input_tokens'),
+            $this->usageValue($data, 'output_tokens'),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function usageValue(array $data, string $key): int
+    {
+        $value = $data['usage'][$key] ?? 0;
+
+        return \is_int($value) ? max(0, $value) : 0;
     }
 }

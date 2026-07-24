@@ -13,6 +13,7 @@ use Splac\Core\Content\Process\ProcessEntity;
 use Splac\Core\Content\ProcessSource\ProcessSourceDefinition;
 use Splac\MessageQueue\Message\ExtractSourcesMessage;
 use Splac\MessageQueue\Message\GenerateProcessMessage;
+use Splac\Service\Llm\LlmUsageService;
 use Splac\Service\ProcessGenerator;
 use Splac\Service\ProductCreator;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -31,7 +32,14 @@ class SplacProcessController
         private readonly MessageBusInterface $messageBus,
         private readonly ProductCreator $productCreator,
         private readonly ProcessGenerator $processGenerator,
+        private readonly LlmUsageService $llmUsageService,
     ) {
+    }
+
+    #[Route(path: '/api/_action/splac/cost-statistics', name: 'api.action.splac.cost_statistics', methods: ['GET'])]
+    public function costStatistics(): JsonResponse
+    {
+        return new JsonResponse($this->llmUsageService->statistics());
     }
 
     #[Route(path: '/api/_action/splac/process', name: 'api.action.splac.process.create', methods: ['POST'])]

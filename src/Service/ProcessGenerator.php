@@ -80,10 +80,10 @@ class ProcessGenerator
         $output = $process->getOutput() ?? [];
 
         $result = match ($step) {
-            self::STEP_CLASSIFICATION => $this->runClassification($template, $locales, $sourceText, $productNameHint, $context),
-            self::STEP_DESCRIPTION => $this->runDescription($template, $locales, $sourceText, $productNameHint, $input),
-            self::STEP_SEO => $this->runSeo($template, $locales, $sourceText, $productNameHint, $input),
-            self::STEP_PROPERTIES => $this->runProperties($sourceText, $productNameHint, $context),
+            self::STEP_CLASSIFICATION => $this->runClassification($process->getId(), $template, $locales, $sourceText, $productNameHint, $context),
+            self::STEP_DESCRIPTION => $this->runDescription($process->getId(), $template, $locales, $sourceText, $productNameHint, $input),
+            self::STEP_SEO => $this->runSeo($process->getId(), $template, $locales, $sourceText, $productNameHint, $input),
+            self::STEP_PROPERTIES => $this->runProperties($process->getId(), $sourceText, $productNameHint, $context),
             self::STEP_CATEGORY => $this->runCategory($process, $locales, $sourceText, $productNameHint),
             default => throw new \RuntimeException(\sprintf('Unknown generation step "%s"', $step)),
         };
@@ -154,6 +154,7 @@ class ProcessGenerator
      * @return array<string, mixed>
      */
     private function runClassification(
+        string $processId,
         TemplateEntity $template,
         array $locales,
         string $sourceText,
@@ -183,7 +184,12 @@ class ProcessGenerator
             \is_string($pattern) ? $pattern : null,
         );
 
-        $data = $this->llmService->completeJson($this->promptBuilder->buildSystemPrompt(), $prompt);
+        $data = $this->llmService->completeJson(
+            $this->promptBuilder->buildSystemPrompt(),
+            $prompt,
+            $processId,
+            self::STEP_CLASSIFICATION,
+        );
 
         $result = [
             'productName' => $this->localeMap($data['productName'] ?? [], $locales),
@@ -225,6 +231,7 @@ class ProcessGenerator
      * @return array<string, mixed>
      */
     private function runDescription(
+        string $processId,
         TemplateEntity $template,
         array $locales,
         string $sourceText,
@@ -249,7 +256,12 @@ class ProcessGenerator
             \is_string($input['descriptionInstruction'] ?? null) ? $input['descriptionInstruction'] : null,
         );
 
-        $data = $this->llmService->completeJson($this->promptBuilder->buildSystemPrompt(), $prompt);
+        $data = $this->llmService->completeJson(
+            $this->promptBuilder->buildSystemPrompt(),
+            $prompt,
+            $processId,
+            self::STEP_DESCRIPTION,
+        );
         $placeholderValues = \is_array($data['placeholders'] ?? null) ? $data['placeholders'] : [];
 
         $descriptions = [];
@@ -320,6 +332,7 @@ class ProcessGenerator
      * @return array<string, mixed>
      */
     private function runSeo(
+        string $processId,
         TemplateEntity $template,
         array $locales,
         string $sourceText,
@@ -337,7 +350,12 @@ class ProcessGenerator
             \is_string($input['seoInstruction'] ?? null) ? $input['seoInstruction'] : null,
         );
 
-        $data = $this->llmService->completeJson($this->promptBuilder->buildSystemPrompt(), $prompt);
+        $data = $this->llmService->completeJson(
+            $this->promptBuilder->buildSystemPrompt(),
+            $prompt,
+            $processId,
+            self::STEP_SEO,
+        );
         $fields = \is_array($data['fields'] ?? null) ? $data['fields'] : [];
 
         $metaTitle = [];
@@ -357,7 +375,7 @@ class ProcessGenerator
     /**
      * @return array<string, mixed>
      */
-    private function runProperties(string $sourceText, string $productNameHint, Context $context): array
+    private function runProperties(string $processId, string $sourceText, string $productNameHint, Context $context): array
     {
         $criteria = new Criteria();
         $criteria->addAssociation('options');
@@ -390,7 +408,12 @@ class ProcessGenerator
         }
 
         $prompt = $this->promptBuilder->buildPropertiesPrompt($groups, $sourceText, $productNameHint);
-        $data = $this->llmService->completeJson($this->promptBuilder->buildSystemPrompt(), $prompt);
+        $data = $this->llmService->completeJson(
+            $this->promptBuilder->buildSystemPrompt(),
+            $prompt,
+            $processId,
+            self::STEP_PROPERTIES,
+        );
 
         $validIds = [];
         foreach ($groups as $group) {
@@ -432,7 +455,12 @@ class ProcessGenerator
             $productNameHint,
         );
 
-        $data = $this->llmService->completeJson($this->promptBuilder->buildSystemPrompt(), $prompt);
+        $data = $this->llmService->completeJson(
+            $this->promptBuilder->buildSystemPrompt(),
+            $prompt,
+            $process->getId(),
+            self::STEP_CATEGORY,
+        );
 
         return [
             'category' => [

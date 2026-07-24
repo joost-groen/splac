@@ -62,6 +62,53 @@
     </card>
 
     <card>
+        <title>Usage costs</title>
+        <title lang="de-DE">Nutzungskosten</title>
+
+        <input-field type="float">
+            <name>inputTokenCost</name>
+            <label>Input token cost per 1 million</label>
+            <label lang="de-DE">Kosten pro 1 Million Eingabe-Token</label>
+            <defaultValue>0</defaultValue>
+        </input-field>
+
+        <input-field type="float">
+            <name>outputTokenCost</name>
+            <label>Output token cost per 1 million</label>
+            <label lang="de-DE">Kosten pro 1 Million Ausgabe-Token</label>
+            <defaultValue>0</defaultValue>
+        </input-field>
+
+        <input-field type="float">
+            <name>ocrPageCost</name>
+            <label>OCR cost per page (Mistral)</label>
+            <label lang="de-DE">OCR-Kosten pro Seite (Mistral)</label>
+            <defaultValue>0</defaultValue>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>costCurrency</name>
+            <label>Cost currency</label>
+            <label lang="de-DE">Kostenwährung</label>
+            <defaultValue>EUR</defaultValue>
+            <options>
+                <option>
+                    <id>EUR</id>
+                    <name>EUR (€)</name>
+                </option>
+                <option>
+                    <id>USD</id>
+                    <name>USD ($)</name>
+                </option>
+                <option>
+                    <id>GBP</id>
+                    <name>GBP (£)</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
         <title>OpenAI</title>
 
         <input-field type="password">

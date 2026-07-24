@@ -25,6 +25,7 @@ class LlmService
     public function __construct(
         private readonly SystemConfigService $systemConfig,
         iterable $clients,
+        private readonly LlmUsageService $usageService,
     ) {
         foreach ($clients as $client) {
             $this->clients[$client->getName()] = $client;
@@ -36,27 +37,36 @@ class LlmService
      *
      * @return array<string, mixed>
      */
-    public function completeJson(string $systemPrompt, string $userPrompt): array
+    public function completeJson(
+        string $systemPrompt,
+        string $userPrompt,
+        ?string $processId = null,
+        string $operation = 'generation',
+    ): array
     {
-        [$client, $apiKey, $model] = $this->configuredClient();
+        [$client, $apiKey, $model, $provider] = $this->configuredClient();
 
-        $raw = $client->complete($apiKey, $model, $systemPrompt, $userPrompt);
+        $response = $client->complete($apiKey, $model, $systemPrompt, $userPrompt);
+        $this->usageService->record($processId, $provider, $model, $operation, $response);
 
-        return $this->decodeJson($raw);
+        return $this->decodeJson($response->text);
     }
 
     /**
      * Sends raw PDF bytes to the configured provider for OCR/document transcription.
      */
-    public function ocrPdf(string $pdfContent, string $filename): string
+    public function ocrPdf(string $pdfContent, string $filename, ?string $processId = null): string
     {
         if ($pdfContent === '') {
             throw new LlmException('Cannot OCR an empty PDF');
         }
 
-        [$client, $apiKey, $model] = $this->configuredClient();
+        [$client, $apiKey, $model, $provider] = $this->configuredClient();
 
-        $text = trim($client->ocrPdf($apiKey, $model, $pdfContent, $filename));
+        $response = $client->ocrPdf($apiKey, $model, $pdfContent, $filename);
+        $this->usageService->record($processId, $provider, $model, 'ocr', $response);
+
+        $text = trim($response->text);
         if (mb_strlen($text) > self::MAX_OCR_CHARS) {
             return mb_substr($text, 0, self::MAX_OCR_CHARS) . "\n[... OCR truncated ...]";
         }
@@ -65,7 +75,7 @@ class LlmService
     }
 
     /**
-     * @return array{LlmClientInterface, string, string}
+     * @return array{LlmClientInterface, string, string, string}
      */
     private function configuredClient(): array
     {
@@ -86,7 +96,7 @@ class LlmService
             throw new LlmException(\sprintf('No model configured for provider "%s". Please set it in the plugin configuration.', $provider));
         }
 
-        return [$client, $apiKey, $model];
+        return [$client, $apiKey, $model, $provider];
     }
 
     /**

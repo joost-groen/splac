@@ -76,7 +76,7 @@ class ExtractSourcesHandler
                     }
 
                     $content = $this->fileLoader->loadMediaFile($source->getMediaId(), $context);
-                    $text = $this->extractPdfText($content, $source->getFilename());
+                    $text = $this->extractPdfText($content, $source->getFilename(), $process->getId());
 
                     $this->processSourceRepository->update([[
                         'id' => $source->getId(),
@@ -108,7 +108,7 @@ class ExtractSourcesHandler
         $this->messageBus->dispatch(new GenerateProcessMessage($process->getId()));
     }
 
-    private function extractPdfText(string $content, string $filename): string
+    private function extractPdfText(string $content, string $filename, string $processId): string
     {
         $mode = (string) ($this->systemConfig->get(self::PDF_EXTRACTION_MODE_CONFIG)
             ?? self::PDF_EXTRACTION_MODE_AUTOMATIC);
@@ -118,11 +118,11 @@ class ExtractSourcesHandler
         }
 
         if ($mode === self::PDF_EXTRACTION_MODE_PROVIDER) {
-            return $this->llmService->ocrPdf($content, $filename);
+            return $this->llmService->ocrPdf($content, $filename, $processId);
         }
 
         try {
-            return $this->llmService->ocrPdf($content, $filename);
+            return $this->llmService->ocrPdf($content, $filename, $processId);
         } catch (LlmException $providerError) {
             try {
                 return $this->extractPdfLocally($content);

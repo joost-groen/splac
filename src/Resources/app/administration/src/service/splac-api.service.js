@@ -53,6 +53,12 @@ class SplacApiService extends ApiService {
             .post(`/_action/splac/process/${processId}/cancel`, {}, { headers: this.getBasicHeaders() })
             .then(ApiService.handleResponse);
     }
+
+    getCostStatistics() {
+        return this.httpClient
+            .get('/_action/splac/cost-statistics', { headers: this.getBasicHeaders() })
+            .then(ApiService.handleResponse);
+    }
 }
 
 Application.addServiceProvider('splacApiService', (container) => {

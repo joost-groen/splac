@@ -23,6 +23,33 @@
     <template #content>
         <sw-card-view>
             <sw-card
+                position-identifier="splac-dashboard-costs"
+                :title="$tc('splac.dashboard.costsTitle')"
+                :is-loading="isLoading && !costStatistics"
+            >
+                <div class="splac-dashboard__cost-tickers">
+                    <div class="splac-dashboard__cost-ticker">
+                        <span class="splac-dashboard__cost-label">{{ $tc('splac.dashboard.costLast24Hours') }}</span>
+                        <strong class="splac-dashboard__cost-value">
+                            {{ formatCost(costStatistics ? costStatistics.last24Hours : 0) }}
+                        </strong>
+                    </div>
+                    <div class="splac-dashboard__cost-ticker">
+                        <span class="splac-dashboard__cost-label">{{ $tc('splac.dashboard.costLast30Days') }}</span>
+                        <strong class="splac-dashboard__cost-value">
+                            {{ formatCost(costStatistics ? costStatistics.last30Days : 0) }}
+                        </strong>
+                    </div>
+                    <div class="splac-dashboard__cost-ticker">
+                        <span class="splac-dashboard__cost-label">{{ $tc('splac.dashboard.costAllTime') }}</span>
+                        <strong class="splac-dashboard__cost-value">
+                            {{ formatCost(costStatistics ? costStatistics.allTime : 0) }}
+                        </strong>
+                    </div>
+                </div>
+            </sw-card>
+
+            <sw-card
                 position-identifier="splac-dashboard-processes"
                 :title="$tc('splac.dashboard.processesTitle')"
                 :is-loading="isLoading && !processes"
@@ -62,6 +89,10 @@
 
                         <template #column-createdAt="{ item }">
                             {{ new Date(item.createdAt).toLocaleString() }}
+                        </template>
+
+                        <template #column-llmCost="{ item }">
+                            {{ formatCost(item.llmCost, item.llmCostCurrency) }}
                         </template>
 
                         <template #actions="{ item }">
