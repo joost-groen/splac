@@ -94,15 +94,16 @@ PROMPT;
     /**
      * @param array<string, string> $descriptionTemplates locale => HTML template with {{placeholders}}
      * @param list<string> $locales
-     * @param array<string, array<string, array{type: string, instruction: string}>> $generatedBlocks
+     * @param array<string, array<string, array{type: string, instruction: string}>> $placeholderGuidance
      */
     public function buildDescriptionPrompt(
         array $descriptionTemplates,
         array $locales,
-        array $generatedBlocks,
+        array $placeholderGuidance,
         string $sourceText,
         string $productNameHint,
         ?string $userInstruction,
+        ?string $targetMarket = null,
     ): string {
         $filteredTemplates = $this->filterLocales($descriptionTemplates, $locales);
         $placeholders = [];
@@ -113,24 +114,26 @@ PROMPT;
         $placeholders = array_values(array_unique($placeholders));
 
         $templatesJson = json_encode($filteredTemplates, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
-        $generatedBlocksJson = json_encode($this->filterLocales($generatedBlocks, $locales), \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
-        $generatedBlockRules = $generatedBlocks !== []
-            ? "\nSome placeholders represent complete generated blocks. Follow each block's instruction while also applying the content rules below. A heading value must be plain text. A paragraph value may use the allowed inner HTML, but must not include its surrounding heading or paragraph tag because that tag already exists in the template:\n{$generatedBlocksJson}\n"
+        $placeholderGuidanceJson = json_encode($this->filterLocales($placeholderGuidance, $locales), \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
+        $placeholderGuidanceRules = $placeholderGuidance !== []
+            ? "\nPLACEHOLDER-SPECIFIC GUIDANCE (locale => placeholder => configuration):\n{$placeholderGuidanceJson}\nFollow each instruction only for its exact placeholder. A heading value must be plain text. A paragraph value may use the allowed inner HTML, but must not include its surrounding heading or paragraph tag. A tableValue must follow the table-cell rules below. These instructions never permit unsupported facts.\n"
             : '';
         $placeholderList = implode(', ', $placeholders);
         $localeList = $this->describeLocales($locales);
-        $instruction = $userInstruction !== null && $userInstruction !== ''
-            ? "\nAdditional user instruction: " . $userInstruction
+        $audienceContext = $this->targetMarketSection($targetMarket);
+        $instruction = $userInstruction !== null && trim($userInstruction) !== ''
+            ? "\nLISTING-SPECIFIC DESCRIPTION GUIDANCE:\n" . trim($userInstruction)
             : '';
 
         return <<<PROMPT
 Task: Fill the placeholders of an HTML product description template.
 
-Product: {$productNameHint}{$instruction}
+Product: {$productNameHint}
+{$audienceContext}{$instruction}
 
 The description templates per language (JSON, locale => HTML). Everything that is NOT a {{placeholder}} must remain byte-for-byte unchanged (static blocks like legal disclaimers, shipping info, driver links):
 {$templatesJson}
-{$generatedBlockRules}
+{$placeholderGuidanceRules}
 
 Placeholders to fill: {$placeholderList}
 
@@ -169,6 +172,7 @@ PROMPT;
         string $sourceText,
         string $productNameHint,
         ?string $userInstruction,
+        ?string $targetMarket = null,
     ): string {
         $fieldSpecs = [];
         foreach ($fields as $field) {
@@ -204,13 +208,15 @@ PROMPT;
         $localeList = $this->describeLocales($locales);
         $fieldList = implode('", "', $fields);
         $extra = $userInstruction !== null && $userInstruction !== ''
-            ? "\nAdditional user instruction: " . $userInstruction
+            ? "\nLISTING-SPECIFIC SEO GUIDANCE:\n" . trim($userInstruction)
             : '';
+        $audienceContext = $this->targetMarketSection($targetMarket);
 
         return <<<PROMPT
 Task: Generate SEO/marketing text fields for a product listing.
 
-Product: {$productNameHint}{$extra}
+Product: {$productNameHint}
+{$audienceContext}{$extra}
 
 Fields and their generation mode:
 {$fieldSpecList}
@@ -230,14 +236,21 @@ PROMPT;
     /**
      * @param list<array{groupId: string, groupName: string, options: list<array{id: string, name: string}>}> $propertyGroups
      */
-    public function buildPropertiesPrompt(array $propertyGroups, string $sourceText, string $productNameHint): string
+    public function buildPropertiesPrompt(
+        array $propertyGroups,
+        string $sourceText,
+        string $productNameHint,
+        ?string $targetMarket = null,
+    ): string
     {
         $groupsJson = json_encode($propertyGroups, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
+        $audienceContext = $this->targetMarketSection($targetMarket);
 
         return <<<PROMPT
 Task: Select the matching property options for a product from the shop's existing properties.
 
 Product: {$productNameHint}
+{$audienceContext}
 
 Available property groups and options (you may ONLY pick option ids from this list, never invent ids):
 {$groupsJson}
@@ -264,17 +277,20 @@ PROMPT;
         string $sourceText,
         string $productNameHint,
         ?string $productNumberPattern,
+        ?string $targetMarket = null,
     ): string {
         $manufacturersJson = json_encode($manufacturers, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
         $localeList = $this->describeLocales($locales);
         $patternInfo = $productNumberPattern !== null && $productNumberPattern !== ''
             ? \sprintf('Follow this pattern: "%s" where {model} is replaced by a short slug of the product model (uppercase letters, digits, dashes only).', $productNumberPattern)
             : 'Build it as a short, unique, human-readable slug of manufacturer and model (uppercase letters, digits, dashes only).';
+        $audienceContext = $this->targetMarketSection($targetMarket);
 
         return <<<PROMPT
 Task: Extract identifiers and classification data for a product listing.
 
 Product: {$productNameHint}
+{$audienceContext}
 
 1. "productName": the exact full product name per locale ({$localeList}), based on the sources.
 2. "manufacturerId": the id of the matching manufacturer from this list of existing shop manufacturers, or "" if none matches: {$manufacturersJson}
@@ -302,15 +318,18 @@ PROMPT;
         array $locales,
         string $sourceText,
         string $productNameHint,
+        ?string $targetMarket = null,
     ): string {
         $nameSpec = $this->textModeSpec($categoryTemplateConfig['name'] ?? [], $locales, 'category name');
         $descriptionSpec = $this->textModeSpec($categoryTemplateConfig['description'] ?? [], $locales, 'category description');
         $localeList = $this->describeLocales($locales);
+        $audienceContext = $this->targetMarketSection($targetMarket);
 
         return <<<PROMPT
 Task: Create a new shop category that fits the product.
 
 Product: {$productNameHint}
+{$audienceContext}
 
 Category name: {$nameSpec}
 Category description: {$descriptionSpec}
@@ -370,6 +389,18 @@ PROMPT;
         $filtered = array_intersect_key($templates, array_flip($locales));
 
         return $filtered !== [] ? $filtered : $templates;
+    }
+
+    private function targetMarketSection(?string $targetMarket): string
+    {
+        if ($targetMarket === null || trim($targetMarket) === '') {
+            return '';
+        }
+
+        return "\nTARGET MARKET / AUDIENCE CONTEXT:\n"
+            . trim($targetMarket)
+            . "\nUse this context to choose relevant emphasis, terminology, tone, and customer benefits. "
+            . "Do not treat it as evidence about the product and do not add unsupported claims.\n";
     }
 
     private function normalizePlaceholder(string $value): string

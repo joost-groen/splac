@@ -91,7 +91,7 @@ class ProcessGenerator
             self::STEP_CLASSIFICATION => $this->runClassification($process->getId(), $template, $locales, $sourceText, $productNameHint, $context, $completionOptions),
             self::STEP_DESCRIPTION => $this->runDescription($process->getId(), $template, $locales, $sourceText, $productNameHint, $input, $completionOptions),
             self::STEP_SEO => $this->runSeo($process->getId(), $template, $locales, $sourceText, $productNameHint, $input, $completionOptions),
-            self::STEP_PROPERTIES => $this->runProperties($process->getId(), $sourceText, $productNameHint, $context, $completionOptions),
+            self::STEP_PROPERTIES => $this->runProperties($process->getId(), $template, $sourceText, $productNameHint, $context, $completionOptions),
             self::STEP_CATEGORY => $this->runCategory($process, $locales, $sourceText, $productNameHint, $completionOptions),
             default => throw new \RuntimeException(\sprintf('Unknown generation step "%s"', $step)),
         };
@@ -170,7 +170,8 @@ class ProcessGenerator
         Context $context,
         CompletionOptions $completionOptions,
     ): array {
-        $features = $template->getConfig()['features'] ?? [];
+        $config = $template->getConfig() ?? [];
+        $features = $config['features'] ?? [];
 
         $manufacturers = [];
         $criteria = new Criteria();
@@ -183,7 +184,7 @@ class ProcessGenerator
             ];
         }
 
-        $pattern = $template->getConfig()['productNumberPattern'] ?? null;
+        $pattern = $config['productNumberPattern'] ?? null;
 
         $prompt = $this->promptBuilder->buildClassificationPrompt(
             $manufacturers,
@@ -191,6 +192,7 @@ class ProcessGenerator
             $sourceText,
             $productNameHint,
             \is_string($pattern) ? $pattern : null,
+            $this->stringConfigValue($config, 'targetMarket'),
         );
 
         $data = $this->llmService->completeJson(
@@ -249,9 +251,10 @@ class ProcessGenerator
         array $input,
         CompletionOptions $completionOptions,
     ): array {
+        $config = $template->getConfig() ?? [];
         $descriptionTemplates = $this->promptBuilder->prepareDescriptionTemplates(
             $template->getDescriptionTemplates() ?? [],
-            $template->getConfig() ?? [],
+            $config,
             $locales,
         );
         if ($descriptionTemplates === []) {
@@ -261,10 +264,11 @@ class ProcessGenerator
         $prompt = $this->promptBuilder->buildDescriptionPrompt(
             $descriptionTemplates,
             $locales,
-            $this->generatedDescriptionBlocks($template->getConfig() ?? [], $locales),
+            $this->descriptionPlaceholderGuidance($config, $locales),
             $sourceText,
             $productNameHint,
             \is_string($input['descriptionInstruction'] ?? null) ? $input['descriptionInstruction'] : null,
+            $this->stringConfigValue($config, 'targetMarket'),
         );
 
         $data = $this->llmService->completeJson(
@@ -275,8 +279,8 @@ class ProcessGenerator
             $completionOptions,
         );
         $placeholderValues = \is_array($data['placeholders'] ?? null) ? $data['placeholders'] : [];
-        $blocksByLocale = \is_array($template->getConfig()['descriptionBlocks'] ?? null)
-            ? $template->getConfig()['descriptionBlocks']
+        $blocksByLocale = \is_array($config['descriptionBlocks'] ?? null)
+            ? $config['descriptionBlocks']
             : [];
 
         $descriptions = [];
@@ -313,7 +317,7 @@ class ProcessGenerator
      *
      * @return array<string, array<string, array{type: string, instruction: string}>>
      */
-    private function generatedDescriptionBlocks(array $config, array $locales): array
+    private function descriptionPlaceholderGuidance(array $config, array $locales): array
     {
         $blocksByLocale = \is_array($config['descriptionBlocks'] ?? null) ? $config['descriptionBlocks'] : [];
         $result = [];
@@ -321,24 +325,51 @@ class ProcessGenerator
         foreach ($locales as $locale) {
             $blocks = \is_array($blocksByLocale[$locale] ?? null) ? $blocksByLocale[$locale] : [];
             foreach ($blocks as $block) {
-                if (!\is_array($block) || ($block['contentMode'] ?? null) !== 'generated') {
+                if (!\is_array($block)) {
                     continue;
                 }
 
                 $type = (string) ($block['type'] ?? 'paragraph');
-                if (!\in_array($type, ['heading', 'paragraph'], true)) {
+                if (
+                    \in_array($type, ['heading', 'paragraph'], true)
+                    && ($block['contentMode'] ?? null) === 'generated'
+                ) {
+                    $id = preg_replace('/[^a-zA-Z0-9_.-]/', '_', (string) ($block['id'] ?? '')) ?? '';
+                    if ($id !== '') {
+                        $result[$locale]['splac_block_' . $id] = [
+                            'type' => $type,
+                            'instruction' => (string) ($block['instruction'] ?? ''),
+                        ];
+                    }
+                }
+
+                if ($type !== 'table') {
                     continue;
                 }
 
-                $id = preg_replace('/[^a-zA-Z0-9_.-]/', '_', (string) ($block['id'] ?? '')) ?? '';
-                if ($id === '') {
-                    continue;
-                }
+                $rows = \is_array($block['rows'] ?? null) ? $block['rows'] : [];
+                foreach ($rows as $row) {
+                    if (
+                        !\is_array($row)
+                        || ($row['mode'] ?? 'placeholder') === 'static'
+                        || !\is_string($row['instruction'] ?? null)
+                        || trim($row['instruction']) === ''
+                    ) {
+                        continue;
+                    }
 
-                $result[$locale]['splac_block_' . $id] = [
-                    'type' => $type,
-                    'instruction' => (string) ($block['instruction'] ?? ''),
-                ];
+                    $placeholder = $this->normalizeDescriptionPlaceholder(
+                        (string) ($row['placeholder'] ?? '') ?: (string) ($row['label'] ?? '')
+                    );
+                    if ($placeholder === '') {
+                        continue;
+                    }
+
+                    $result[$locale][$placeholder] = [
+                        'type' => 'tableValue',
+                        'instruction' => trim($row['instruction']),
+                    ];
+                }
             }
         }
 
@@ -360,7 +391,8 @@ class ProcessGenerator
         array $input,
         CompletionOptions $completionOptions,
     ): array {
-        $fieldModes = $template->getConfig()['fieldModes'] ?? [];
+        $config = $template->getConfig() ?? [];
+        $fieldModes = $config['fieldModes'] ?? [];
 
         $prompt = $this->promptBuilder->buildTextFieldsPrompt(
             \is_array($fieldModes) ? $fieldModes : [],
@@ -369,6 +401,7 @@ class ProcessGenerator
             $sourceText,
             $productNameHint,
             \is_string($input['seoInstruction'] ?? null) ? $input['seoInstruction'] : null,
+            $this->stringConfigValue($config, 'targetMarket'),
         );
 
         $data = $this->llmService->completeJson(
@@ -399,6 +432,7 @@ class ProcessGenerator
      */
     private function runProperties(
         string $processId,
+        TemplateEntity $template,
         string $sourceText,
         string $productNameHint,
         Context $context,
@@ -435,7 +469,13 @@ class ProcessGenerator
             return ['propertyOptionIds' => []];
         }
 
-        $prompt = $this->promptBuilder->buildPropertiesPrompt($groups, $sourceText, $productNameHint);
+        $config = $template->getConfig() ?? [];
+        $prompt = $this->promptBuilder->buildPropertiesPrompt(
+            $groups,
+            $sourceText,
+            $productNameHint,
+            $this->stringConfigValue($config, 'targetMarket'),
+        );
         $data = $this->llmService->completeJson(
             $this->promptBuilder->buildSystemPrompt(),
             $prompt,
@@ -483,6 +523,7 @@ class ProcessGenerator
             $locales,
             $sourceText,
             $productNameHint,
+            $this->stringConfigValue($process->getTemplate()?->getConfig() ?? [], 'targetMarket'),
         );
 
         $data = $this->llmService->completeJson(
@@ -517,5 +558,35 @@ class ProcessGenerator
         }
 
         return $map;
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function stringConfigValue(array $config, string $key): ?string
+    {
+        $value = $config[$key] ?? null;
+
+        return \is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    private function normalizeDescriptionPlaceholder(string $value): string
+    {
+        $value = strtr(trim($value), [
+            'ß' => 'ss',
+            'Æ' => 'AE',
+            'æ' => 'ae',
+            'Ø' => 'O',
+            'ø' => 'o',
+        ]);
+
+        if (class_exists(\Normalizer::class)) {
+            $value = \Normalizer::normalize($value, \Normalizer::FORM_KD) ?: $value;
+            $value = preg_replace('/\p{Mn}+/u', '', $value) ?? $value;
+        }
+
+        $value = preg_replace('/\s+/', '_', $value) ?? $value;
+
+        return preg_replace('/[^a-zA-Z0-9_.-]/', '', $value) ?? '';
     }
 }

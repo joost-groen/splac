@@ -967,6 +967,17 @@
         font-weight: 600;
     }
 
+    &__table-row-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 24px;
+    }
+
+    &__table-instruction-button.is--configured {
+        color: #6330c0;
+        background: #f3edff;
+    }
+
     &__html-textarea textarea {
         font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
         font-size: 12px;

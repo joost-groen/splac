@@ -15,6 +15,9 @@ LLM generates everything else. Nothing goes live without review — the product 
 - **Two generation modes per text field** (SEO title/description, tags, keywords):
   *instruction* (the LLM writes the whole text) or *placeholder* (your text, only tokens are
   filled in).
+- **Template-level AI guidance** with a shared target market and optional instructions on
+  individual generated table properties. Each instruction is attached to its exact placeholder
+  without being treated as factual product evidence.
 - **PDF grounding**: the LLM only uses facts found in the uploaded datasheets. Fields
   without source information stay empty and are flagged in review.
 - **Category templates**: create a new category via LLM when no existing one fits.

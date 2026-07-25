@@ -78,6 +78,7 @@ const createTableRow = (values = {}) => {
         mode,
         placeholder: values.placeholder || (mode === 'placeholder' ? normalizePlaceholder(label) : ''),
         content: values.content || '',
+        instruction: values.instruction || '',
     };
 };
 
@@ -178,6 +179,7 @@ const createBlock = (type, values = {}) => {
 
 const defaultConfig = () => ({
     languages: ['de-DE', 'en-GB'],
+    targetMarket: '',
     features: {
         description: true,
         seo: true,
@@ -233,6 +235,8 @@ Shopware.Component.register('splac-template-detail', {
             imageAlt: '',
             imageMediaId: null,
             isResolvingImage: false,
+            tableFieldInstructionTarget: null,
+            tableFieldInstructionDraft: '',
         };
     },
 
@@ -517,6 +521,25 @@ Shopware.Component.register('splac-template-detail', {
 
         removeTableRow(block, rowIndex) {
             block.rows.splice(rowIndex, 1);
+        },
+
+        openTableFieldInstruction(row) {
+            this.tableFieldInstructionTarget = row;
+            this.tableFieldInstructionDraft = row.instruction || '';
+        },
+
+        closeTableFieldInstruction() {
+            this.tableFieldInstructionTarget = null;
+            this.tableFieldInstructionDraft = '';
+        },
+
+        saveTableFieldInstruction() {
+            if (!this.tableFieldInstructionTarget) {
+                return;
+            }
+
+            this.tableFieldInstructionTarget.instruction = this.tableFieldInstructionDraft.trim();
+            this.closeTableFieldInstruction();
         },
 
         insertBlockPlaceholder(block) {

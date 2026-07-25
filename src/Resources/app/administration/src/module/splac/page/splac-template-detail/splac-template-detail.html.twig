@@ -73,6 +73,23 @@
             </sw-card>
 
             <sw-card
+                position-identifier="splac-template-detail-ai-guidance"
+                :title="$tc('splac.templateDetail.cardAiGuidance')"
+                :is-loading="isLoading"
+            >
+                <p class="splac-template-detail__hint">
+                    {{ $tc('splac.templateDetail.aiGuidanceHint') }}
+                </p>
+
+                <sw-textarea-field
+                    v-model="item.config.targetMarket"
+                    :label="$tc('splac.templateDetail.fieldTargetMarket')"
+                    :placeholder="$tc('splac.templateDetail.fieldTargetMarketPlaceholder')"
+                    :help-text="$tc('splac.templateDetail.fieldTargetMarketHelp')"
+                ></sw-textarea-field>
+            </sw-card>
+
+            <sw-card
                 position-identifier="splac-template-detail-description"
                 :title="$tc('splac.templateDetail.cardDescription')"
                 :is-loading="isLoading"
@@ -671,13 +688,26 @@
                                             v-model:value="row.content"
                                             :label="$tc('splac.templateDetail.tableStaticValue')"
                                         ></sw-text-field>
-                                        <sw-button
-                                            size="x-small"
-                                            square
-                                            variant="danger"
-                                            :title="$tc('global.default.delete')"
-                                            @click="removeTableRow(block, rowIndex)"
-                                        >×</sw-button>
+                                        <div class="splac-template-detail__table-row-actions">
+                                            <sw-button
+                                                v-if="row.mode === 'placeholder'"
+                                                class="splac-template-detail__table-instruction-button"
+                                                :class="{ 'is--configured': !!row.instruction }"
+                                                size="x-small"
+                                                square
+                                                variant="ghost"
+                                                :title="$tc('splac.templateDetail.tableFieldInstructionButton')"
+                                                :aria-label="$tc('splac.templateDetail.tableFieldInstructionButton')"
+                                                @click="openTableFieldInstruction(row)"
+                                            >✦</sw-button>
+                                            <sw-button
+                                                size="x-small"
+                                                square
+                                                variant="danger"
+                                                :title="$tc('global.default.delete')"
+                                                @click="removeTableRow(block, rowIndex)"
+                                            >×</sw-button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -853,6 +883,34 @@
                             @click="insertImage"
                         >
                             {{ $tc('splac.templateDetail.insertImage') }}
+                        </sw-button>
+                    </template>
+                </sw-modal>
+
+                <sw-modal
+                    v-if="tableFieldInstructionTarget"
+                    :title="$tc('splac.templateDetail.tableFieldInstructionTitle')"
+                    @modal-close="closeTableFieldInstruction"
+                >
+                    <p class="splac-template-detail__hint">
+                        {{ $tc('splac.templateDetail.tableFieldInstructionHelp') }}
+                    </p>
+                    <sw-textarea-field
+                        v-model="tableFieldInstructionDraft"
+                        :label="$tc('splac.templateDetail.tableFieldInstructionLabel')"
+                        :placeholder="$tc('splac.templateDetail.tableFieldInstructionPlaceholder')"
+                    ></sw-textarea-field>
+
+                    <template #modal-footer>
+                        <sw-button size="small" @click="closeTableFieldInstruction">
+                            {{ $tc('global.default.cancel') }}
+                        </sw-button>
+                        <sw-button
+                            variant="primary"
+                            size="small"
+                            @click="saveTableFieldInstruction"
+                        >
+                            {{ $tc('global.default.save') }}
                         </sw-button>
                     </template>
                 </sw-modal>
