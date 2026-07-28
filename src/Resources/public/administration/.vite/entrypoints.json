@@ -3,11 +3,11 @@
   "entryPoints": {
     "splac": {
       "css": [
-        "/bundles/splac/administration/assets/splac-DH9yumGO.css"
+        "/bundles/splac/administration/assets/splac-DAd0fF_O.css"
       ],
       "dynamic": [],
       "js": [
-        "/bundles/splac/administration/assets/splac-V7QXIkJM.js"
+        "/bundles/splac/administration/assets/splac-hGxh-z9q.js"
       ],
       "legacy": false,
       "preload": []

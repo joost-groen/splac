@@ -1,5 +1,11 @@
 import template from './splac-review.html.twig';
 import './splac-review.scss';
+import {
+    characterCountState,
+    createCategorySlug,
+    isGeneratedCategoryInvalid,
+    splitCategoryKeywords,
+} from './category-review';
 
 const { Criteria } = Shopware.Data;
 
@@ -26,6 +32,8 @@ Shopware.Component.register('splac-review', {
             regeneratingStep: null,
             pollTimer: null,
             previewLocale: 'de-DE',
+            categoryReviewLocale: 'de-DE',
+            categoryReviewSection: 'content',
         };
     },
 
@@ -62,6 +70,43 @@ Shopware.Component.register('splac-review', {
 
         hasCategoryOutput() {
             return this.process?.input?.categoryMode === 'template';
+        },
+
+        isCategoryReviewInvalid() {
+            return isGeneratedCategoryInvalid(
+                this.hasCategoryOutput,
+                this.output.category,
+                this.locales,
+            );
+        },
+
+        categoryReviewName() {
+            return String(this.output.category?.name?.[this.categoryReviewLocale] || '');
+        },
+
+        categoryReviewDescription() {
+            return String(this.output.category?.description?.[this.categoryReviewLocale] || '');
+        },
+
+        categoryReviewMetaTitle() {
+            return String(this.output.category?.metaTitle?.[this.categoryReviewLocale] || '');
+        },
+
+        categoryReviewMetaDescription() {
+            return String(this.output.category?.metaDescription?.[this.categoryReviewLocale] || '');
+        },
+
+        categoryReviewKeywords() {
+            return splitCategoryKeywords(
+                this.output.category?.keywords?.[this.categoryReviewLocale],
+            );
+        },
+
+        categoryReviewSlug() {
+            return createCategorySlug(
+                this.categoryReviewName,
+                this.$tc('splac.review.categoryPreviewSlugFallback'),
+            );
         },
 
         emptyFields() {
@@ -110,6 +155,9 @@ Shopware.Component.register('splac-review', {
                 if (!this.locales.includes(this.previewLocale)) {
                     [this.previewLocale] = this.locales;
                 }
+                if (!this.locales.includes(this.categoryReviewLocale)) {
+                    [this.categoryReviewLocale] = this.locales;
+                }
 
                 if (this.isGenerating) {
                     this.startPolling();
@@ -154,6 +202,17 @@ Shopware.Component.register('splac-review', {
         },
 
         async onApprove() {
+            if (this.isCategoryReviewInvalid) {
+                this.createNotificationError({
+                    message: this.$tc('splac.review.categoryNameRequired'),
+                });
+                document.querySelector('.splac-review__category-card')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                });
+                return;
+            }
+
             this.isApproving = true;
 
             try {
@@ -188,6 +247,10 @@ Shopware.Component.register('splac-review', {
 
         onTagsChange(value) {
             this.output.tags = value.split(',').map((t) => t.trim()).filter((t) => t !== '');
+        },
+
+        characterCountClass(value, maximum) {
+            return characterCountState(value, maximum);
         },
     },
 });

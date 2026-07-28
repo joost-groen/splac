@@ -291,7 +291,7 @@ class ProductCreator
 
         $generated = $output['category'] ?? null;
         if (!\is_array($generated)) {
-            return null;
+            throw new \RuntimeException('Generated category output is missing');
         }
 
         $translations = [];
@@ -327,7 +327,7 @@ class ProductCreator
         if (!isset($translations[Defaults::LANGUAGE_SYSTEM])) {
             $first = reset($translations);
             if ($first === false) {
-                return null;
+                throw new \RuntimeException('Generated category needs a name');
             }
             $translations[Defaults::LANGUAGE_SYSTEM] = $first;
         }

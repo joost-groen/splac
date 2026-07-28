@@ -35,7 +35,8 @@ LLM generates everything else. Nothing goes live without review — the product 
   Changing the configured currency starts a separate set of dashboard totals; historical
   ledger entries retain the currency and rates used when each request was made.
 - **Review screen** with per-field editing, HTML preview, and per-field regeneration
-  before the inactive product is created.
+  before the inactive product is created. Generated categories include placement, storefront
+  content, and search-result previews and are created only after the combined review is approved.
 
 ## Supported LLM providers
 

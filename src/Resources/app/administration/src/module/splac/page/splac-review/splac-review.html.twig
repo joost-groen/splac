@@ -21,6 +21,7 @@
             size="small"
             :is-loading="isApproving"
             :process-success="false"
+            :disabled="isCategoryReviewInvalid"
             @click="onApprove"
         >
             {{ $tc('splac.review.approveButton') }}
@@ -41,6 +42,15 @@
 
             <sw-alert v-if="isReviewable && emptyFields.length" variant="warning" class="splac-review__banner">
                 {{ $tc('splac.review.emptyFieldsWarning') }}: {{ emptyFields.join(', ') }}
+            </sw-alert>
+
+            <sw-alert
+                v-if="isReviewable && isCategoryReviewInvalid"
+                variant="error"
+                class="splac-review__banner"
+                :closable="false"
+            >
+                {{ $tc('splac.review.categoryApprovalBlocked') }}
             </sw-alert>
 
             <template v-if="isReviewable || isDone">
@@ -221,6 +231,7 @@
                 <!-- Generated category -->
                 <sw-card
                     v-if="hasCategoryOutput && output.category"
+                    class="splac-review__category-card"
                     position-identifier="splac-review-category"
                     :title="$tc('splac.review.cardCategory')"
                     :is-loading="isLoading"
@@ -234,40 +245,209 @@
                         </sw-context-menu-item>
                     </template>
 
-                    <template v-for="locale in locales" :key="`cat-${locale}`">
-                        <sw-text-field
-                            v-if="output.category.name"
-                            v-model:value="output.category.name[locale]"
-                            :label="`${$tc('splac.review.fieldCategoryName')} (${locale})`"
-                            :disabled="isDone"
-                        ></sw-text-field>
-                        <sw-textarea-field
-                            v-if="output.category.description"
-                            v-model="output.category.description[locale]"
-                            :label="`${$tc('splac.review.fieldCategoryDescription')} (${locale})`"
-                            :disabled="isDone"
-                        ></sw-textarea-field>
-                        <sw-text-field
-                            v-if="output.category.metaTitle"
-                            v-model:value="output.category.metaTitle[locale]"
-                            :label="`${$tc('splac.review.fieldCategoryMetaTitle')} (${locale})`"
-                            :disabled="isDone"
-                            :max-length="60"
-                        ></sw-text-field>
-                        <sw-textarea-field
-                            v-if="output.category.metaDescription"
-                            v-model="output.category.metaDescription[locale]"
-                            :label="`${$tc('splac.review.fieldCategoryMetaDescription')} (${locale})`"
-                            :disabled="isDone"
-                            :max-length="160"
-                        ></sw-textarea-field>
-                        <sw-text-field
-                            v-if="output.category.keywords"
-                            v-model:value="output.category.keywords[locale]"
-                            :label="`${$tc('splac.review.fieldCategoryKeywords')} (${locale})`"
-                            :disabled="isDone"
-                        ></sw-text-field>
-                    </template>
+                    <div class="splac-review__category-heading">
+                        <div>
+                            <span class="splac-review__category-eyebrow">
+                                {{ isDone
+                                    ? $tc('splac.review.categoryCreatedBadge')
+                                    : $tc('splac.review.categoryNewBadge') }}
+                            </span>
+                            <h3>
+                                {{ categoryReviewName || $tc('splac.review.categoryUntitled') }}
+                            </h3>
+                            <p>{{ $tc('splac.review.categoryReviewHelp') }}</p>
+                        </div>
+                        <span
+                            v-if="isCategoryReviewInvalid"
+                            class="splac-review__category-attention"
+                        >
+                            {{ $tc('splac.review.categoryNeedsAttention') }}
+                        </span>
+                    </div>
+
+                    <div class="splac-review__category-toolbar">
+                        <div
+                            v-if="locales.length > 1"
+                            class="splac-review__locale-switch splac-review__locale-switch--category"
+                        >
+                            <sw-button
+                                v-for="locale in locales"
+                                :key="`category-locale-${locale}`"
+                                size="x-small"
+                                :variant="categoryReviewLocale === locale ? 'primary' : null"
+                                @click="categoryReviewLocale = locale"
+                            >
+                                {{ locale }}
+                            </sw-button>
+                        </div>
+
+                        <div
+                            class="splac-review__category-tabs"
+                            role="tablist"
+                            :aria-label="$tc('splac.review.categoryReviewSections')"
+                        >
+                            <button
+                                type="button"
+                                role="tab"
+                                :aria-selected="categoryReviewSection === 'content'"
+                                :class="{ 'is--active': categoryReviewSection === 'content' }"
+                                @click="categoryReviewSection = 'content'"
+                            >
+                                {{ $tc('splac.review.categoryContentTab') }}
+                            </button>
+                            <button
+                                type="button"
+                                role="tab"
+                                :aria-selected="categoryReviewSection === 'seo'"
+                                :class="{ 'is--active': categoryReviewSection === 'seo' }"
+                                @click="categoryReviewSection = 'seo'"
+                            >
+                                {{ $tc('splac.review.categorySeoTab') }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <sw-entity-single-select
+                        v-if="'parentCategoryId' in output.category"
+                        v-model:value="output.category.parentCategoryId"
+                        entity="category"
+                        :label="$tc('splac.review.fieldCategoryParent')"
+                        :help-text="$tc('splac.review.fieldCategoryParentHelp')"
+                        :disabled="isDone"
+                    ></sw-entity-single-select>
+
+                    <div
+                        v-if="categoryReviewSection === 'content'"
+                        class="splac-review__category-review-grid"
+                        role="tabpanel"
+                    >
+                        <div class="splac-review__category-form">
+                            <sw-text-field
+                                v-if="output.category.name"
+                                v-model:value="output.category.name[categoryReviewLocale]"
+                                :label="`${$tc('splac.review.fieldCategoryName')} (${categoryReviewLocale})`"
+                                :disabled="isDone"
+                                required
+                            ></sw-text-field>
+                            <sw-textarea-field
+                                v-if="output.category.description"
+                                v-model="output.category.description[categoryReviewLocale]"
+                                :label="`${$tc('splac.review.fieldCategoryDescription')} (${categoryReviewLocale})`"
+                                :disabled="isDone"
+                            ></sw-textarea-field>
+                        </div>
+
+                        <div class="splac-review__category-preview">
+                            <div class="splac-review__preview-label">
+                                {{ $tc('splac.review.categoryStorefrontPreview') }}
+                            </div>
+                            <article>
+                                <span>{{ $tc('splac.review.categoryPreviewEyebrow') }}</span>
+                                <h2>
+                                    {{ categoryReviewName || $tc('splac.review.categoryUntitled') }}
+                                </h2>
+                                <div
+                                    v-if="categoryReviewDescription"
+                                    class="splac-review__category-description-preview"
+                                    v-html="categoryReviewDescription"
+                                ></div>
+                                <p v-else class="splac-review__preview-empty">
+                                    {{ $tc('splac.review.categoryDescriptionEmpty') }}
+                                </p>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div
+                        v-else
+                        class="splac-review__category-review-grid"
+                        role="tabpanel"
+                    >
+                        <div class="splac-review__category-form">
+                            <sw-text-field
+                                v-if="output.category.metaTitle"
+                                v-model:value="output.category.metaTitle[categoryReviewLocale]"
+                                :label="`${$tc('splac.review.fieldCategoryMetaTitle')} (${categoryReviewLocale})`"
+                                :disabled="isDone"
+                                :max-length="60"
+                            ></sw-text-field>
+                            <div
+                                v-if="output.category.metaTitle"
+                                class="splac-review__character-count"
+                                :class="characterCountClass(categoryReviewMetaTitle, 60)"
+                            >
+                                {{ categoryReviewMetaTitle.length }} / 60
+                            </div>
+
+                            <sw-textarea-field
+                                v-if="output.category.metaDescription"
+                                v-model="output.category.metaDescription[categoryReviewLocale]"
+                                :label="`${$tc('splac.review.fieldCategoryMetaDescription')} (${categoryReviewLocale})`"
+                                :disabled="isDone"
+                                :max-length="160"
+                            ></sw-textarea-field>
+                            <div
+                                v-if="output.category.metaDescription"
+                                class="splac-review__character-count"
+                                :class="characterCountClass(categoryReviewMetaDescription, 160)"
+                            >
+                                {{ categoryReviewMetaDescription.length }} / 160
+                            </div>
+
+                            <sw-text-field
+                                v-if="output.category.keywords"
+                                v-model:value="output.category.keywords[categoryReviewLocale]"
+                                :label="`${$tc('splac.review.fieldCategoryKeywords')} (${categoryReviewLocale})`"
+                                :help-text="$tc('splac.review.fieldCategoryKeywordsHelp')"
+                                :disabled="isDone"
+                            ></sw-text-field>
+
+                            <div
+                                v-if="categoryReviewKeywords.length"
+                                class="splac-review__category-keywords"
+                                :aria-label="$tc('splac.review.fieldCategoryKeywords')"
+                            >
+                                <span
+                                    v-for="keyword in categoryReviewKeywords"
+                                    :key="keyword"
+                                >
+                                    {{ keyword }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="splac-review__search-preview">
+                            <div class="splac-review__preview-label">
+                                {{ $tc('splac.review.categorySearchPreview') }}
+                            </div>
+                            <article>
+                                <span class="splac-review__search-domain">
+                                    {{ $tc('splac.review.categoryPreviewDomain') }}
+                                </span>
+                                <span class="splac-review__search-url">
+                                    /{{ categoryReviewSlug }}
+                                </span>
+                                <h3>
+                                    {{ categoryReviewMetaTitle
+                                        || categoryReviewName
+                                        || $tc('splac.review.categoryUntitled') }}
+                                </h3>
+                                <p>
+                                    {{ categoryReviewMetaDescription
+                                        || $tc('splac.review.categoryMetaDescriptionEmpty') }}
+                                </p>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div class="splac-review__category-footer">
+                        <sw-icon name="regular-info-circle" small></sw-icon>
+                        <span>
+                            {{ isDone
+                                ? $tc('splac.review.categoryCreatedHelp')
+                                : $tc('splac.review.categoryCreationHelp') }}
+                        </span>
+                    </div>
                 </sw-card>
             </template>
 
