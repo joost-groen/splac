@@ -223,6 +223,21 @@
                     position-identifier="splac-wizard-ai-processing"
                     :title="$tc('splac.wizard.cardAiProcessing')"
                 >
+                    <sw-alert
+                        v-if="!llmCapabilities.enabled"
+                        variant="error"
+                        :closable="false"
+                    >
+                        {{ $tc('splac.wizard.extendedBetaRequired', 0, { provider: providerLabel }) }}
+                    </sw-alert>
+                    <sw-alert
+                        v-else-if="!llmCapabilities.officiallySupported"
+                        variant="warning"
+                        :closable="false"
+                    >
+                        {{ $tc('splac.wizard.extendedBetaActive', 0, { provider: providerLabel }) }}
+                    </sw-alert>
+
                     <p class="splac-wizard__processing-intro">
                         {{ $tc('splac.wizard.aiProcessingHint') }}
                     </p>

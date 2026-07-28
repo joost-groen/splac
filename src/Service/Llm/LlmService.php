@@ -12,6 +12,8 @@ class LlmService
 {
     private const CONFIG_PREFIX = 'Splac.config.';
 
+    private const OFFICIALLY_SUPPORTED_PROVIDER = 'anthropic';
+
     private const MAX_OCR_CHARS = 60000;
 
     /**
@@ -55,17 +57,30 @@ class LlmService
     }
 
     /**
-     * @return array{provider: string, reasoning: bool, batchProcessing: bool}
+     * @return array{
+     *     provider: string,
+     *     reasoning: bool,
+     *     batchProcessing: bool,
+     *     officiallySupported: bool,
+     *     extendedBeta: bool,
+     *     enabled: bool
+     * }
      */
     public function capabilities(): array
     {
         $provider = $this->configuredProvider();
         $client = $this->clients[$provider] ?? null;
+        $officiallySupported = $provider === self::OFFICIALLY_SUPPORTED_PROVIDER;
+        $extendedBeta = $this->isExtendedBetaEnabled();
+        $enabled = $client !== null && ($officiallySupported || $extendedBeta);
 
         return [
             'provider' => $provider,
-            'reasoning' => $client?->supportsReasoning() ?? false,
-            'batchProcessing' => $client?->supportsBatchProcessing() ?? false,
+            'reasoning' => $enabled && $client->supportsReasoning(),
+            'batchProcessing' => $enabled && $client->supportsBatchProcessing(),
+            'officiallySupported' => $officiallySupported,
+            'extendedBeta' => $extendedBeta,
+            'enabled' => $enabled,
         ];
     }
 
@@ -98,6 +113,13 @@ class LlmService
     {
         $provider = $this->configuredProvider();
 
+        if ($provider !== self::OFFICIALLY_SUPPORTED_PROVIDER && !$this->isExtendedBetaEnabled()) {
+            throw new LlmException(\sprintf(
+                'Provider "%s" is available only in Extended Beta mode and is not officially supported. Enable Extended Beta in the plugin configuration or select Anthropic.',
+                $provider
+            ));
+        }
+
         $client = $this->clients[$provider] ?? null;
         if ($client === null) {
             throw new LlmException(\sprintf('Unknown LLM provider "%s"', $provider));
@@ -118,7 +140,21 @@ class LlmService
 
     private function configuredProvider(): string
     {
-        return (string) ($this->systemConfig->get(self::CONFIG_PREFIX . 'provider') ?? 'openai');
+        if (!$this->isExtendedBetaEnabled()) {
+            return self::OFFICIALLY_SUPPORTED_PROVIDER;
+        }
+
+        $provider = trim((string) ($this->systemConfig->get(self::CONFIG_PREFIX . 'provider') ?? ''));
+
+        return $provider !== '' ? $provider : self::OFFICIALLY_SUPPORTED_PROVIDER;
+    }
+
+    private function isExtendedBetaEnabled(): bool
+    {
+        return filter_var(
+            $this->systemConfig->get(self::CONFIG_PREFIX . 'extendedBeta') ?? false,
+            \FILTER_VALIDATE_BOOL
+        );
     }
 
     /**

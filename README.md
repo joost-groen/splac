@@ -38,15 +38,33 @@ LLM generates everything else. Nothing goes live without review — the product 
 
 ## Supported LLM providers
 
-OpenAI, Anthropic, Gemini, and Mistral. Select the provider and enter the API key and model
-name under *Settings → System → Plugins → Splac*.
+Anthropic is the only officially supported provider. Select Anthropic and enter its API key
+and model name under *Settings → System → Plugins → Splac*.
+
+OpenAI, Google Gemini, and Mistral are available only through the opt-in **Extended Beta**
+mode. These integrations are experimental, are not officially supported by Splac, and are
+intentionally hidden from the normal plugin settings. Advanced testers can enable a provider
+through Shopware's system configuration:
+
+```bash
+bin/console system:config:set Splac.config.extendedBeta true --json
+bin/console system:config:set Splac.config.provider openai
+bin/console system:config:set Splac.config.openaiApiKey '<api-key>'
+bin/console system:config:set Splac.config.openaiModel 'gpt-4o'
+```
+
+Use `gemini` or `mistral` as the provider key and configure the corresponding API key and
+model keys when testing those integrations. Running
+`bin/console system:config:set Splac.config.extendedBeta false --json` immediately returns
+Splac to Anthropic, regardless of a stored Extended Beta provider.
 
 ## PDF extraction
 
 Splac sends each uploaded PDF directly to the selected LLM provider for an OCR/document
-transcription pass before any product data is generated. OpenAI, Anthropic, and Gemini use
-their native PDF input support; Mistral uses its Document AI OCR endpoint. The transcription
-is stored once and reused by every generation step.
+transcription pass before any product data is generated. Anthropic uses its native PDF input
+support. In Extended Beta mode, OpenAI and Gemini use their native PDF input support, while
+Mistral uses its Document AI OCR endpoint. The transcription is stored once and reused by
+every generation step.
 
 The **OCR mode** setting offers provider OCR with local fallback (default), provider OCR
 only, or local extraction only. Local extraction can use `pdftoppm` and Tesseract (including

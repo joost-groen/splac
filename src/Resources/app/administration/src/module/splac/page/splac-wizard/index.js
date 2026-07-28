@@ -22,6 +22,9 @@ Shopware.Component.register('splac-wizard', {
                 provider: '',
                 reasoning: false,
                 batchProcessing: false,
+                officiallySupported: true,
+                extendedBeta: false,
+                enabled: true,
             },
             input: {
                 language: null,
@@ -80,7 +83,7 @@ Shopware.Component.register('splac-wizard', {
                 ? !!this.input.categoryId
                 : !!this.categoryTemplateId;
 
-            return basicsOk && categoryOk;
+            return basicsOk && categoryOk && this.llmCapabilities.enabled;
         },
 
         categoryModeOptions() {

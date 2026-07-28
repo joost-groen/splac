@@ -99,6 +99,8 @@
             "addAdvancedPrice": "Preisregel hinzufügen",
             "cardAiProcessing": "KI-Verarbeitung",
             "aiProcessingHint": "Lege fest, wie das Modell dieses Listing verarbeitet. Diese Einstellungen gelten für die Generierung; die PDF-Extraktion bleibt unverändert.",
+            "extendedBetaRequired": "{provider} wird nicht offiziell unterstützt und erfordert den Extended-Beta-Modus. Aktiviere ihn in der Splac-Plugin-Konfiguration oder wähle Anthropic.",
+            "extendedBetaActive": "{provider} wird im Extended-Beta-Modus verwendet. Dieser Anbieter ist experimentell und wird von Splac nicht offiziell unterstützt.",
             "reasoningTitle": "Erweitertes Denken",
             "qualityControl": "Qualitätssteuerung",
             "reasoningToggle": "Reasoning aktivieren",

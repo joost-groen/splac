@@ -99,6 +99,8 @@
             "addAdvancedPrice": "Add price rule",
             "cardAiProcessing": "AI processing",
             "aiProcessingHint": "Choose how the model handles this listing. These settings apply to generation requests; PDF extraction is unchanged.",
+            "extendedBetaRequired": "{provider} is not officially supported and requires Extended Beta mode. Enable it in the Splac plugin configuration or select Anthropic.",
+            "extendedBetaActive": "{provider} is running in Extended Beta mode. This provider is experimental and is not officially supported by Splac.",
             "reasoningTitle": "Extended reasoning",
             "qualityControl": "Quality control",
             "reasoningToggle": "Enable reasoning",
