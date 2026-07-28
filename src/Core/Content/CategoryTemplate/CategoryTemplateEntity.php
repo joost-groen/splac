@@ -17,6 +17,8 @@ class CategoryTemplateEntity extends Entity
 
     protected string $name;
 
+    protected bool $active = true;
+
     protected ?string $parentCategoryId = null;
 
     protected ?CategoryEntity $parentCategory = null;
@@ -34,6 +36,16 @@ class CategoryTemplateEntity extends Entity
     public function setName(string $name): void
     {
         $this->name = $name;
+    }
+
+    public function getActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): void
+    {
+        $this->active = $active;
     }
 
     public function getParentCategoryId(): ?string

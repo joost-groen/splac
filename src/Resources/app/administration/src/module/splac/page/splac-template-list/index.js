@@ -61,6 +61,11 @@ Shopware.Component.register('splac-template-list', {
                     primary: true,
                     allowResize: true,
                 },
+                {
+                    property: 'active',
+                    label: this.$tc('splac.templates.columnActive'),
+                    align: 'center',
+                },
             ];
         },
 
@@ -188,6 +193,7 @@ Shopware.Component.register('splac-template-list', {
                 entity.active = template.active;
                 entity.descriptionTemplates = cloneJson(template.descriptionTemplates);
             } else {
+                entity.active = template.active;
                 // Category IDs are installation-specific and intentionally
                 // never imported. The destination category is selected locally.
                 entity.parentCategoryId = null;

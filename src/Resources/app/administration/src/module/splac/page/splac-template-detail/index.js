@@ -328,6 +328,10 @@ Shopware.Component.register('splac-template-detail', {
     },
 
     methods: {
+        localeLabel(locale) {
+            return this.$tc(`splac.templateDetail.locale.${locale}`);
+        },
+
         async loadItem() {
             this.isLoading = true;
 

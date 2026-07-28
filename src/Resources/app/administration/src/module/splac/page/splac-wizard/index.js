@@ -93,6 +93,14 @@ Shopware.Component.register('splac-wizard', {
             ];
         },
 
+        categoryTemplateCriteria() {
+            const criteria = new Criteria(1, 100);
+            criteria.addFilter(Criteria.equals('active', true));
+            criteria.addSorting(Criteria.sort('name', 'ASC'));
+
+            return criteria;
+        },
+
         languageOptions() {
             const configured = this.selectedTemplate?.config?.languages;
             const languages = Array.isArray(configured) && configured.length

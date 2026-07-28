@@ -44,6 +44,7 @@ export const createTemplateFile = (item, type, exportedAt = new Date()) => {
         }
         : {
             name: item.name,
+            active: item.active !== false,
             config: cloneJson(item.config),
         };
 

@@ -171,6 +171,7 @@
                         v-else
                         v-model:value="categoryTemplateId"
                         entity="splac_category_template"
+                        :criteria="categoryTemplateCriteria"
                         :label="$tc('splac.wizard.fieldCategoryTemplate')"
                         :help-text="$tc('splac.wizard.fieldCategoryTemplateHelp')"
                     ></sw-entity-single-select>

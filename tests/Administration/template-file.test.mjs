@@ -48,6 +48,7 @@ test('listing templates round-trip without internal entity fields', () => {
 test('category template files omit installation-specific parent category IDs', () => {
     const contents = serializeTemplateFile({
         name: 'Technical category',
+        active: false,
         parentCategoryId: 'installation-specific-id',
         config: {
             name: { mode: 'instruction', 'en-GB': 'Write a category name' },
@@ -59,7 +60,9 @@ test('category template files omit installation-specific parent category IDs', (
     const file = JSON.parse(contents);
 
     assert.equal(file.type, 'category');
+    assert.equal(file.template.active, false);
     assert.equal('parentCategoryId' in file.template, false);
+    assert.equal(parseTemplateFile(contents).template.active, false);
     assert.deepEqual(parseTemplateFile(contents).template.config, file.template.config);
     assert.equal(
         parseTemplateFile(contents).template.config.metaTitle['en-GB'],

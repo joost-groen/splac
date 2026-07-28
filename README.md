@@ -10,6 +10,8 @@ LLM generates everything else. Nothing goes live without review — the product 
 - **Listing templates** with a per-language description builder. Text blocks support optional
   semantic headings, rich HTML editing (lists, links, formatting, and images), and dynamic
   values wrapped in double curly braces.
+- **Localized administration** in English and German, including the dashboard, listing
+  workflow, review screens, template editors, notifications, and plugin configuration.
 - **Conditional description blocks** select an if/else branch from source-grounded product
   facts, with presence, text, and numeric comparison operators.
 - **Two generation modes per text field** (SEO title/description, tags, keywords):

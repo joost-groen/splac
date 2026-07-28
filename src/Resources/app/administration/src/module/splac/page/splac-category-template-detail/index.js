@@ -34,6 +34,7 @@ Shopware.Component.register('splac-category-template-detail', {
             isLoading: true,
             isSaving: false,
             locales: LOCALES,
+            activeLocale: LOCALES[0],
         };
     },
 
@@ -63,6 +64,10 @@ Shopware.Component.register('splac-category-template-detail', {
     },
 
     methods: {
+        localeLabel(locale) {
+            return this.$tc(`splac.templateDetail.locale.${locale}`);
+        },
+
         async loadItem() {
             this.isLoading = true;
 
@@ -72,6 +77,7 @@ Shopware.Component.register('splac-category-template-detail', {
                 } else {
                     this.item = this.repository.create(Shopware.Context.api);
                     this.item.name = '';
+                    this.item.active = true;
                 }
 
                 const merged = defaultConfig();

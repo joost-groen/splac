@@ -34,7 +34,7 @@
                 <option>
                     <id>automatic</id>
                     <name>Provider OCR with local fallback</name>
-                    <name lang="de-DE">Anbieter-OCR mit lokalem Fallback</name>
+                    <name lang="de-DE">Anbieter-OCR mit lokaler Ersatzextraktion</name>
                 </option>
                 <option>
                     <id>provider</id>

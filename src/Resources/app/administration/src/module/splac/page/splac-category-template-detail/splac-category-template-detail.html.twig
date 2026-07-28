@@ -25,18 +25,25 @@
                 :title="$tc('splac.categoryTemplateDetail.cardGeneral')"
                 :is-loading="isLoading"
             >
-                <sw-text-field
-                    v-model:value="item.name"
-                    :label="$tc('splac.templateDetail.fieldName')"
-                    required
-                ></sw-text-field>
+                <div class="splac-category-template-detail__general-grid">
+                    <sw-text-field
+                        v-model:value="item.name"
+                        :label="$tc('splac.templateDetail.fieldName')"
+                        :placeholder="$tc('splac.categoryTemplateDetail.fieldNamePlaceholder')"
+                        required
+                    ></sw-text-field>
 
-                <sw-entity-single-select
-                    v-model:value="item.parentCategoryId"
-                    entity="category"
-                    :label="$tc('splac.categoryTemplateDetail.fieldParentCategory')"
-                    :help-text="$tc('splac.categoryTemplateDetail.fieldParentCategoryHelp')"
-                ></sw-entity-single-select>
+                    <sw-switch-field
+                        v-model:value="item.active"
+                        :label="$tc('splac.templateDetail.fieldActive')"
+                    ></sw-switch-field>
+
+                    <sw-entity-single-select
+                        v-model:value="item.parentCategoryId"
+                        entity="category"
+                        :label="$tc('splac.categoryTemplateDetail.fieldParentCategory')"
+                    ></sw-entity-single-select>
+                </div>
             </sw-card>
 
             <sw-card
@@ -44,35 +51,52 @@
                 :title="$tc('splac.categoryTemplateDetail.cardContent')"
                 :is-loading="isLoading"
             >
-                <p class="splac-category-template-detail__card-intro">
-                    {{ $tc('splac.categoryTemplateDetail.contentHelp') }}
-                </p>
+                <nav
+                    class="splac-category-template-detail__locale-tabs"
+                    :aria-label="$tc('splac.templateDetail.languageSwitcherLabel')"
+                >
+                    <button
+                        v-for="locale in locales"
+                        :key="`content-${locale}`"
+                        type="button"
+                        :class="{ 'is--active': activeLocale === locale }"
+                        :aria-pressed="activeLocale === locale"
+                        @click="activeLocale = locale"
+                    >
+                        <span>{{ localeLabel(locale) }}</span>
+                        <small>{{ locale }}</small>
+                    </button>
+                </nav>
 
+                <div class="splac-category-template-detail__field-list">
                 <section
-                    v-for="field in contentFields"
+                    v-for="(field, fieldIndex) in contentFields"
                     :key="field"
                     class="splac-category-template-detail__field-section"
                 >
-                    <h3>{{ $tc(`splac.categoryTemplateDetail.field.${field}`) }}</h3>
-                    <p class="splac-category-template-detail__field-help">
-                        {{ $tc(`splac.categoryTemplateDetail.fieldHelp.${field}`) }}
-                    </p>
+                    <header class="splac-category-template-detail__field-header">
+                        <span>{{ fieldIndex + 1 }}</span>
+                        <div>
+                            <h3>{{ $tc(`splac.categoryTemplateDetail.field.${field}`) }}</h3>
+                        </div>
+                    </header>
 
-                    <sw-select-field
-                        v-model="item.config[field].mode"
-                        :label="$tc('splac.templateDetail.fieldMode')"
-                        :options="modeOptions"
-                    ></sw-select-field>
+                    <div class="splac-category-template-detail__field-controls">
+                        <sw-select-field
+                            v-model="item.config[field].mode"
+                            :label="$tc('splac.templateDetail.fieldMode')"
+                            :options="modeOptions"
+                        ></sw-select-field>
 
-                    <sw-textarea-field
-                        v-for="locale in locales"
-                        :key="`${field}-${locale}`"
-                        v-model="item.config[field][locale]"
-                        :label="`${$tc(item.config[field].mode === 'placeholder'
-                            ? 'splac.templateDetail.fieldTextWithPlaceholders'
-                            : 'splac.templateDetail.fieldInstruction')} (${locale})`"
-                    ></sw-textarea-field>
+                        <sw-textarea-field
+                            v-model="item.config[field][activeLocale]"
+                            :label="`${$tc(item.config[field].mode === 'placeholder'
+                                ? 'splac.templateDetail.fieldTextWithPlaceholders'
+                                : 'splac.templateDetail.fieldInstruction')} · ${localeLabel(activeLocale)}`"
+                        ></sw-textarea-field>
+                    </div>
                 </section>
+                </div>
             </sw-card>
 
             <sw-card
@@ -80,35 +104,52 @@
                 :title="$tc('splac.categoryTemplateDetail.cardSeo')"
                 :is-loading="isLoading"
             >
-                <p class="splac-category-template-detail__card-intro">
-                    {{ $tc('splac.categoryTemplateDetail.seoHelp') }}
-                </p>
+                <nav
+                    class="splac-category-template-detail__locale-tabs"
+                    :aria-label="$tc('splac.templateDetail.languageSwitcherLabel')"
+                >
+                    <button
+                        v-for="locale in locales"
+                        :key="`seo-${locale}`"
+                        type="button"
+                        :class="{ 'is--active': activeLocale === locale }"
+                        :aria-pressed="activeLocale === locale"
+                        @click="activeLocale = locale"
+                    >
+                        <span>{{ localeLabel(locale) }}</span>
+                        <small>{{ locale }}</small>
+                    </button>
+                </nav>
 
+                <div class="splac-category-template-detail__field-list">
                 <section
-                    v-for="field in seoFields"
+                    v-for="(field, fieldIndex) in seoFields"
                     :key="field"
                     class="splac-category-template-detail__field-section"
                 >
-                    <h3>{{ $tc(`splac.categoryTemplateDetail.field.${field}`) }}</h3>
-                    <p class="splac-category-template-detail__field-help">
-                        {{ $tc(`splac.categoryTemplateDetail.fieldHelp.${field}`) }}
-                    </p>
+                    <header class="splac-category-template-detail__field-header">
+                        <span>{{ fieldIndex + 1 }}</span>
+                        <div>
+                            <h3>{{ $tc(`splac.categoryTemplateDetail.field.${field}`) }}</h3>
+                        </div>
+                    </header>
 
-                    <sw-select-field
-                        v-model="item.config[field].mode"
-                        :label="$tc('splac.templateDetail.fieldMode')"
-                        :options="modeOptions"
-                    ></sw-select-field>
+                    <div class="splac-category-template-detail__field-controls">
+                        <sw-select-field
+                            v-model="item.config[field].mode"
+                            :label="$tc('splac.templateDetail.fieldMode')"
+                            :options="modeOptions"
+                        ></sw-select-field>
 
-                    <sw-textarea-field
-                        v-for="locale in locales"
-                        :key="`${field}-${locale}`"
-                        v-model="item.config[field][locale]"
-                        :label="`${$tc(item.config[field].mode === 'placeholder'
-                            ? 'splac.templateDetail.fieldTextWithPlaceholders'
-                            : 'splac.templateDetail.fieldInstruction')} (${locale})`"
-                    ></sw-textarea-field>
+                        <sw-textarea-field
+                            v-model="item.config[field][activeLocale]"
+                            :label="`${$tc(item.config[field].mode === 'placeholder'
+                                ? 'splac.templateDetail.fieldTextWithPlaceholders'
+                                : 'splac.templateDetail.fieldInstruction')} · ${localeLabel(activeLocale)}`"
+                        ></sw-textarea-field>
+                    </div>
                 </section>
+                </div>
             </sw-card>
         </sw-card-view>
     </template>

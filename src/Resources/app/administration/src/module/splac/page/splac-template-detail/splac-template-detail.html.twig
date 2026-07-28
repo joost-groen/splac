@@ -98,16 +98,21 @@
                     {{ $tc('splac.templateDetail.descriptionHint') }}
                 </p>
 
-                <div class="splac-template-detail__locale-tabs">
+                <div
+                    class="splac-template-detail__locale-tabs"
+                    :aria-label="$tc('splac.templateDetail.languageSwitcherLabel')"
+                >
                     <button
                         v-for="locale in locales"
                         :key="locale"
                         type="button"
                         class="splac-template-detail__locale-tab"
                         :class="{ 'is--active': activeDescriptionLocale === locale }"
+                        :aria-pressed="activeDescriptionLocale === locale"
                         @click="activeDescriptionLocale = locale"
                     >
-                        {{ locale }}
+                        <span>{{ localeLabel(locale) }}</span>
+                        <small>{{ locale }}</small>
                     </button>
                 </div>
 
@@ -659,61 +664,106 @@
                                     {{ $tc('splac.templateDetail.tableFormattingDisabledHint') }}
                                 </div>
 
-                                <div class="splac-template-detail__table-rows">
-                                    <div
-                                        v-for="(row, rowIndex) in block.rows"
-                                        :key="row.id"
-                                        class="splac-template-detail__table-row"
-                                    >
-                                        <span class="splac-template-detail__table-row-number">{{ rowIndex + 1 }}</span>
-                                        <sw-text-field
-                                            v-model:value="row.label"
-                                            :label="$tc('splac.templateDetail.tablePropertyLabel')"
-                                            :placeholder="$tc('splac.templateDetail.tablePropertyLabelPlaceholder')"
-                                        ></sw-text-field>
-                                        <sw-select-field
-                                            v-model="row.mode"
-                                            :label="$tc('splac.templateDetail.tableValueMode')"
-                                            :options="tableValueModeOptions"
-                                        ></sw-select-field>
-                                        <sw-text-field
-                                            v-if="row.mode === 'placeholder'"
-                                            v-model:value="row.placeholder"
-                                            :label="$tc('splac.templateDetail.tableSourceField')"
-                                            :placeholder="$tc('splac.templateDetail.tableSourceFieldPlaceholder')"
-                                            :help-text="$tc('splac.templateDetail.tableSourceFieldHelp')"
-                                        ></sw-text-field>
-                                        <sw-text-field
-                                            v-else
-                                            v-model:value="row.content"
-                                            :label="$tc('splac.templateDetail.tableStaticValue')"
-                                        ></sw-text-field>
-                                        <div class="splac-template-detail__table-row-actions">
-                                            <sw-button
-                                                v-if="row.mode === 'placeholder'"
-                                                class="splac-template-detail__table-instruction-button"
-                                                :class="{ 'is--configured': !!row.instruction }"
-                                                size="x-small"
-                                                square
-                                                variant="ghost"
-                                                :title="$tc('splac.templateDetail.tableFieldInstructionButton')"
-                                                :aria-label="$tc('splac.templateDetail.tableFieldInstructionButton')"
-                                                @click="openTableFieldInstruction(row)"
-                                            >✦</sw-button>
-                                            <sw-button
-                                                size="x-small"
-                                                square
-                                                variant="danger"
-                                                :title="$tc('global.default.delete')"
-                                                @click="removeTableRow(block, rowIndex)"
-                                            >×</sw-button>
+                                <section class="splac-template-detail__table-editor">
+                                    <header class="splac-template-detail__table-editor-header">
+                                        <div>
+                                            <strong>{{ $tc('splac.templateDetail.tablePropertiesTitle') }}</strong>
+                                            <span>{{ $tc('splac.templateDetail.tablePropertiesHelp') }}</span>
+                                        </div>
+                                        <span class="splac-template-detail__table-count">
+                                            {{ block.rows.length }} {{ $tc('splac.templateDetail.tablePropertyCount') }}
+                                        </span>
+                                    </header>
+
+                                    <div v-if="block.rows.length" class="splac-template-detail__table-rows">
+                                        <article
+                                            v-for="(row, rowIndex) in block.rows"
+                                            :key="row.id"
+                                            class="splac-template-detail__table-row"
+                                        >
+                                            <header class="splac-template-detail__table-row-header">
+                                                <div>
+                                                    <span class="splac-template-detail__table-row-number">
+                                                        {{ rowIndex + 1 }}
+                                                    </span>
+                                                    <strong>
+                                                        {{ row.label || $tc('splac.templateDetail.tablePropertyUntitled') }}
+                                                    </strong>
+                                                </div>
+                                                <div class="splac-template-detail__table-row-actions">
+                                                    <sw-button
+                                                        v-if="row.mode === 'placeholder'"
+                                                        class="splac-template-detail__table-instruction-button"
+                                                        :class="{ 'is--configured': !!row.instruction }"
+                                                        size="x-small"
+                                                        variant="ghost"
+                                                        :title="$tc('splac.templateDetail.tableFieldInstructionButton')"
+                                                        @click="openTableFieldInstruction(row)"
+                                                    >
+                                                        <span aria-hidden="true">✦</span>
+                                                        {{
+                                                            row.instruction
+                                                                ? $tc('splac.templateDetail.tableFieldInstructionConfigured')
+                                                                : $tc('splac.templateDetail.tableFieldInstructionButton')
+                                                        }}
+                                                    </sw-button>
+                                                    <sw-button
+                                                        size="x-small"
+                                                        square
+                                                        variant="danger"
+                                                        :title="$tc('global.default.delete')"
+                                                        :aria-label="$tc('global.default.delete')"
+                                                        @click="removeTableRow(block, rowIndex)"
+                                                    >×</sw-button>
+                                                </div>
+                                            </header>
+
+                                            <div class="splac-template-detail__table-row-fields">
+                                                <sw-text-field
+                                                    v-model:value="row.label"
+                                                    :label="$tc('splac.templateDetail.tablePropertyLabel')"
+                                                    :placeholder="$tc('splac.templateDetail.tablePropertyLabelPlaceholder')"
+                                                ></sw-text-field>
+                                                <sw-select-field
+                                                    v-model="row.mode"
+                                                    :label="$tc('splac.templateDetail.tableValueMode')"
+                                                    :options="tableValueModeOptions"
+                                                ></sw-select-field>
+                                                <sw-text-field
+                                                    v-if="row.mode === 'placeholder'"
+                                                    v-model:value="row.placeholder"
+                                                    :label="$tc('splac.templateDetail.tableSourceField')"
+                                                    :placeholder="$tc('splac.templateDetail.tableSourceFieldPlaceholder')"
+                                                    :help-text="$tc('splac.templateDetail.tableSourceFieldHelp')"
+                                                ></sw-text-field>
+                                                <sw-text-field
+                                                    v-else
+                                                    v-model:value="row.content"
+                                                    :label="$tc('splac.templateDetail.tableStaticValue')"
+                                                ></sw-text-field>
+                                            </div>
+                                        </article>
+                                    </div>
+
+                                    <div v-else class="splac-template-detail__table-empty">
+                                        <span aria-hidden="true">+</span>
+                                        <div>
+                                            <strong>{{ $tc('splac.templateDetail.tableEmptyTitle') }}</strong>
+                                            <p>{{ $tc('splac.templateDetail.tableEmptyHelp') }}</p>
                                         </div>
                                     </div>
-                                </div>
 
-                                <sw-button size="small" @click="addTableRow(block)">
-                                    + {{ $tc('splac.templateDetail.addTableProperty') }}
-                                </sw-button>
+                                    <footer class="splac-template-detail__table-editor-footer">
+                                        <span>{{ $tc('splac.templateDetail.tableAddHelp') }}</span>
+                                        <sw-button
+                                            variant="ghost"
+                                            size="small"
+                                            @click="addTableRow(block)"
+                                        >
+                                            + {{ $tc('splac.templateDetail.addTableProperty') }}
+                                        </sw-button>
+                                    </footer>
+                                </section>
                             </div>
 
                             <div v-else-if="block.type === 'conditional'">

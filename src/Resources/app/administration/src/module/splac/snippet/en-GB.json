@@ -181,8 +181,13 @@
         },
         "templates": {
             "title": "Templates",
+            "overviewTitle": "Template overview",
+            "listingCountLabel": "listing templates",
+            "categoryCountLabel": "category templates",
             "listingTemplatesTitle": "Listing templates",
             "categoryTemplatesTitle": "Category templates",
+            "statusActive": "Active",
+            "statusInactive": "Inactive",
             "addTemplate": "New listing template",
             "addCategoryTemplate": "New category template",
             "columnName": "Name",
@@ -252,6 +257,11 @@
             "tableFormattingDisabledHint": "Custom formatting is disabled for this preset. The storefront theme controls this table.",
             "addBlock": "Add block",
             "addBlockHint": "Blocks can be reordered and edited separately for each language.",
+            "languageSwitcherLabel": "Content language",
+            "locale": {
+                "de-DE": "German",
+                "en-GB": "English"
+            },
             "emptyBlocksTitle": "No description blocks yet",
             "emptyBlocksSubline": "Add a heading, text paragraph, or property table.",
             "moveBlockUp": "Move block up",
@@ -364,6 +374,13 @@
             },
             "tablePropertyLabel": "Label",
             "tablePropertyLabelPlaceholder": "e.g. Processor",
+            "tablePropertiesTitle": "Table properties",
+            "tablePropertiesHelp": "Each property becomes one label-and-value row in the generated product description.",
+            "tablePropertyCount": "properties",
+            "tablePropertyUntitled": "Untitled property",
+            "tableEmptyTitle": "No properties in this table",
+            "tableEmptyHelp": "Add the first property to define what Splac should extract.",
+            "tableAddHelp": "Use one clear source field per generated value.",
             "tableValueMode": "Value type",
             "tableValueGenerated": "Generate from source",
             "tableValueStatic": "Fixed value",
@@ -371,6 +388,7 @@
             "tableSourceFieldPlaceholder": "e.g. processor",
             "tableSourceFieldHelp": "A unique name without spaces. Splac fills this value from the product sources.",
             "tableFieldInstructionButton": "Add AI guidance for this property",
+            "tableFieldInstructionConfigured": "AI guidance added",
             "tableFieldInstructionTitle": "AI guidance for table property",
             "tableFieldInstructionLabel": "Additional information (optional)",
             "tableFieldInstructionHelp": "Explain how the LLM should extract or format this specific property. This instruction is attached only to this table field and cannot override source grounding.",
@@ -421,25 +439,16 @@
             "cardGeneral": "General",
             "cardContent": "Category content",
             "cardSeo": "Category SEO",
-            "contentHelp": "Define how the customer-facing category name and description should be generated in each language.",
-            "seoHelp": "Control the category metadata that search engines and Shopware search use. Keep instructions specific to the products grouped in this category.",
             "card_name": "Category name",
             "card_description": "Category description",
             "fieldParentCategory": "Parent category",
-            "fieldParentCategoryHelp": "New categories are created below this category.",
+            "fieldNamePlaceholder": "e.g. Business laptops",
             "field": {
                 "name": "Category name",
                 "description": "Category description",
                 "metaTitle": "Meta title",
                 "metaDescription": "Meta description",
                 "keywords": "Search keywords"
-            },
-            "fieldHelp": {
-                "name": "The concise, customer-facing name shown in navigation and category pages.",
-                "description": "Introductory category copy that explains the product range and supports discovery.",
-                "metaTitle": "Search-result title; generated output is limited to 60 characters.",
-                "metaDescription": "Search-result summary; generated output is limited to 160 characters.",
-                "keywords": "A focused comma-separated set of terms used by Shopware category search."
             }
         }
     }

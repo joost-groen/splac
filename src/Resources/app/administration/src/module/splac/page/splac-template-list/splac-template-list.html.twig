@@ -37,6 +37,28 @@
 
     <template #content>
         <sw-card-view>
+            <section class="splac-template-list__overview">
+                <div class="splac-template-list__overview-copy">
+                    <h2>{{ $tc('splac.templates.overviewTitle') }}</h2>
+                </div>
+                <div class="splac-template-list__overview-metrics">
+                    <div class="splac-template-list__overview-metric">
+                        <span class="splac-template-list__metric-icon" aria-hidden="true">L</span>
+                        <div>
+                            <strong>{{ templates ? templates.length : 0 }}</strong>
+                            <span>{{ $tc('splac.templates.listingCountLabel') }}</span>
+                        </div>
+                    </div>
+                    <div class="splac-template-list__overview-metric">
+                        <span class="splac-template-list__metric-icon splac-template-list__metric-icon--category" aria-hidden="true">C</span>
+                        <div>
+                            <strong>{{ categoryTemplates ? categoryTemplates.length : 0 }}</strong>
+                            <span>{{ $tc('splac.templates.categoryCountLabel') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <sw-card
                 class="splac-template-list__templates"
                 position-identifier="splac-template-list-templates"
@@ -51,9 +73,27 @@
                         :show-actions="true"
                         identifier="splac-template-grid"
                     >
+                        <template #column-name="{ item }">
+                            <router-link
+                                class="splac-template-list__template-name"
+                                :to="{ name: 'splac.templateDetail', params: { id: item.id } }"
+                            >
+                                <span class="splac-template-list__template-icon" aria-hidden="true">L</span>
+                                <strong>{{ item.name }}</strong>
+                            </router-link>
+                        </template>
                         <template #column-active="{ item }">
-                            <sw-icon v-if="item.active" name="regular-checkmark-xs" small class="splac-icon--active"></sw-icon>
-                            <sw-icon v-else name="regular-times-s" small class="splac-icon--inactive"></sw-icon>
+                            <span
+                                class="splac-template-list__status"
+                                :class="{ 'is--active': item.active }"
+                            >
+                                <span aria-hidden="true"></span>
+                                {{
+                                    item.active
+                                        ? $tc('splac.templates.statusActive')
+                                        : $tc('splac.templates.statusInactive')
+                                }}
+                            </span>
                         </template>
                         <template #actions="{ item }">
                             <sw-context-menu-item @click="$router.push({ name: 'splac.templateDetail', params: { id: item.id } })">
@@ -73,7 +113,17 @@
                     :title="$tc('splac.templates.emptyTitle')"
                     :subline="$tc('splac.templates.emptySubline')"
                     :absolute="false"
-                ></sw-empty-state>
+                >
+                    <template #actions>
+                        <sw-button
+                            variant="primary"
+                            size="small"
+                            @click="$router.push({ name: 'splac.templateDetail' })"
+                        >
+                            {{ $tc('splac.templates.addTemplate') }}
+                        </sw-button>
+                    </template>
+                </sw-empty-state>
             </sw-card>
 
             <sw-card
@@ -90,6 +140,28 @@
                         :show-actions="true"
                         identifier="splac-category-template-grid"
                     >
+                        <template #column-name="{ item }">
+                            <router-link
+                                class="splac-template-list__template-name"
+                                :to="{ name: 'splac.categoryTemplateDetail', params: { id: item.id } }"
+                            >
+                                <span class="splac-template-list__template-icon splac-template-list__template-icon--category" aria-hidden="true">C</span>
+                                <strong>{{ item.name }}</strong>
+                            </router-link>
+                        </template>
+                        <template #column-active="{ item }">
+                            <span
+                                class="splac-template-list__status"
+                                :class="{ 'is--active': item.active }"
+                            >
+                                <span aria-hidden="true"></span>
+                                {{
+                                    item.active
+                                        ? $tc('splac.templates.statusActive')
+                                        : $tc('splac.templates.statusInactive')
+                                }}
+                            </span>
+                        </template>
                         <template #actions="{ item }">
                             <sw-context-menu-item @click="$router.push({ name: 'splac.categoryTemplateDetail', params: { id: item.id } })">
                                 {{ $tc('global.default.edit') }}
@@ -108,7 +180,17 @@
                     :title="$tc('splac.templates.emptyCategoryTitle')"
                     :subline="$tc('splac.templates.emptyCategorySubline')"
                     :absolute="false"
-                ></sw-empty-state>
+                >
+                    <template #actions>
+                        <sw-button
+                            variant="primary"
+                            size="small"
+                            @click="$router.push({ name: 'splac.categoryTemplateDetail' })"
+                        >
+                            {{ $tc('splac.templates.addCategoryTemplate') }}
+                        </sw-button>
+                    </template>
+                </sw-empty-state>
             </sw-card>
         </sw-card-view>
 

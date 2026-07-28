@@ -4,6 +4,7 @@ namespace Splac\Core\Content\CategoryTemplate;
 
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
@@ -45,6 +46,7 @@ class CategoryTemplateDefinition extends EntityDefinition
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
             (new StringField('name', 'name'))->addFlags(new Required()),
+            new BoolField('active', 'active'),
             new FkField('parent_category_id', 'parentCategoryId', CategoryDefinition::class),
             new ReferenceVersionField(CategoryDefinition::class, 'parent_category_version_id'),
             // per-locale generation config for category name/description (instruction or placeholder mode)
