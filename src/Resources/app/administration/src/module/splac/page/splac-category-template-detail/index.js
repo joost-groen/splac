@@ -1,10 +1,16 @@
 import template from './splac-category-template-detail.html.twig';
+import './splac-category-template-detail.scss';
 
 const LOCALES = ['de-DE', 'en-GB'];
+const CONTENT_FIELDS = ['name', 'description'];
+const SEO_FIELDS = ['metaTitle', 'metaDescription', 'keywords'];
 
 const defaultConfig = () => ({
     name: { mode: 'instruction', 'de-DE': '', 'en-GB': '' },
     description: { mode: 'instruction', 'de-DE': '', 'en-GB': '' },
+    metaTitle: { mode: 'instruction', 'de-DE': '', 'en-GB': '' },
+    metaDescription: { mode: 'instruction', 'de-DE': '', 'en-GB': '' },
+    keywords: { mode: 'instruction', 'de-DE': '', 'en-GB': '' },
 });
 
 Shopware.Component.register('splac-category-template-detail', {
@@ -42,6 +48,14 @@ Shopware.Component.register('splac-category-template-detail', {
                 { value: 'placeholder', label: this.$tc('splac.templateDetail.modePlaceholder') },
             ];
         },
+
+        contentFields() {
+            return CONTENT_FIELDS;
+        },
+
+        seoFields() {
+            return SEO_FIELDS;
+        },
     },
 
     created() {
@@ -62,10 +76,10 @@ Shopware.Component.register('splac-category-template-detail', {
 
                 const merged = defaultConfig();
                 const existing = this.item.config || {};
-                this.item.config = {
-                    name: { ...merged.name, ...(existing.name || {}) },
-                    description: { ...merged.description, ...(existing.description || {}) },
-                };
+                this.item.config = [...CONTENT_FIELDS, ...SEO_FIELDS].reduce((config, field) => ({
+                    ...config,
+                    [field]: { ...merged[field], ...(existing[field] || {}) },
+                }), {});
             } finally {
                 this.isLoading = false;
             }

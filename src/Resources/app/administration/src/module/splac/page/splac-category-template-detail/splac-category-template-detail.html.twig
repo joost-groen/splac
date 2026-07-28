@@ -40,26 +40,75 @@
             </sw-card>
 
             <sw-card
-                v-for="field in ['name', 'description']"
-                :key="field"
-                :position-identifier="`splac-category-template-${field}`"
-                :title="$tc(`splac.categoryTemplateDetail.card_${field}`)"
+                position-identifier="splac-category-template-content"
+                :title="$tc('splac.categoryTemplateDetail.cardContent')"
                 :is-loading="isLoading"
             >
-                <sw-select-field
-                    v-model="item.config[field].mode"
-                    :label="$tc('splac.templateDetail.fieldMode')"
-                    :options="modeOptions"
-                ></sw-select-field>
+                <p class="splac-category-template-detail__card-intro">
+                    {{ $tc('splac.categoryTemplateDetail.contentHelp') }}
+                </p>
 
-                <sw-textarea-field
-                    v-for="locale in locales"
-                    :key="`${field}-${locale}`"
-                    v-model="item.config[field][locale]"
-                    :label="`${$tc(item.config[field].mode === 'placeholder'
-                        ? 'splac.templateDetail.fieldTextWithPlaceholders'
-                        : 'splac.templateDetail.fieldInstruction')} (${locale})`"
-                ></sw-textarea-field>
+                <section
+                    v-for="field in contentFields"
+                    :key="field"
+                    class="splac-category-template-detail__field-section"
+                >
+                    <h3>{{ $tc(`splac.categoryTemplateDetail.field.${field}`) }}</h3>
+                    <p class="splac-category-template-detail__field-help">
+                        {{ $tc(`splac.categoryTemplateDetail.fieldHelp.${field}`) }}
+                    </p>
+
+                    <sw-select-field
+                        v-model="item.config[field].mode"
+                        :label="$tc('splac.templateDetail.fieldMode')"
+                        :options="modeOptions"
+                    ></sw-select-field>
+
+                    <sw-textarea-field
+                        v-for="locale in locales"
+                        :key="`${field}-${locale}`"
+                        v-model="item.config[field][locale]"
+                        :label="`${$tc(item.config[field].mode === 'placeholder'
+                            ? 'splac.templateDetail.fieldTextWithPlaceholders'
+                            : 'splac.templateDetail.fieldInstruction')} (${locale})`"
+                    ></sw-textarea-field>
+                </section>
+            </sw-card>
+
+            <sw-card
+                position-identifier="splac-category-template-seo"
+                :title="$tc('splac.categoryTemplateDetail.cardSeo')"
+                :is-loading="isLoading"
+            >
+                <p class="splac-category-template-detail__card-intro">
+                    {{ $tc('splac.categoryTemplateDetail.seoHelp') }}
+                </p>
+
+                <section
+                    v-for="field in seoFields"
+                    :key="field"
+                    class="splac-category-template-detail__field-section"
+                >
+                    <h3>{{ $tc(`splac.categoryTemplateDetail.field.${field}`) }}</h3>
+                    <p class="splac-category-template-detail__field-help">
+                        {{ $tc(`splac.categoryTemplateDetail.fieldHelp.${field}`) }}
+                    </p>
+
+                    <sw-select-field
+                        v-model="item.config[field].mode"
+                        :label="$tc('splac.templateDetail.fieldMode')"
+                        :options="modeOptions"
+                    ></sw-select-field>
+
+                    <sw-textarea-field
+                        v-for="locale in locales"
+                        :key="`${field}-${locale}`"
+                        v-model="item.config[field][locale]"
+                        :label="`${$tc(item.config[field].mode === 'placeholder'
+                            ? 'splac.templateDetail.fieldTextWithPlaceholders'
+                            : 'splac.templateDetail.fieldInstruction')} (${locale})`"
+                    ></sw-textarea-field>
+                </section>
             </sw-card>
         </sw-card-view>
     </template>

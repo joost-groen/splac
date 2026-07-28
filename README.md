@@ -20,7 +20,8 @@ LLM generates everything else. Nothing goes live without review — the product 
   without being treated as factual product evidence.
 - **PDF grounding**: the LLM only uses facts found in the uploaded datasheets. Fields
   without source information stay empty and are flagged in review.
-- **Category templates**: create a new category via LLM when no existing one fits.
+- **Category templates**: create a translated category via LLM when no existing one fits,
+  including configurable name, description, meta title, meta description, and search keywords.
 - **Property matching** against existing property groups/options (no invented values),
   manufacturer match-or-create, EAN/MPN extraction, unique product numbers from a pattern,
   tags and search keywords, DE + EN translations.

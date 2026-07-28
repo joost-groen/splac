@@ -307,6 +307,21 @@ class ProductCreator
             if (\is_string($description) && $description !== '') {
                 $translations[$languageId]['description'] = $description;
             }
+
+            $metaTitle = $generated['metaTitle'][$locale] ?? '';
+            if (\is_string($metaTitle) && $metaTitle !== '') {
+                $translations[$languageId]['metaTitle'] = $metaTitle;
+            }
+
+            $metaDescription = $generated['metaDescription'][$locale] ?? '';
+            if (\is_string($metaDescription) && $metaDescription !== '') {
+                $translations[$languageId]['metaDescription'] = $metaDescription;
+            }
+
+            $keywords = $generated['keywords'][$locale] ?? '';
+            if (\is_string($keywords) && $keywords !== '') {
+                $translations[$languageId]['keywords'] = $keywords;
+            }
         }
 
         if (!isset($translations[Defaults::LANGUAGE_SYSTEM])) {

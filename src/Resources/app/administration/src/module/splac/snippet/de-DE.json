@@ -151,6 +151,9 @@
             "fieldProperties": "Ausgewählte Eigenschaften",
             "fieldCategoryName": "Kategoriename",
             "fieldCategoryDescription": "Kategoriebeschreibung",
+            "fieldCategoryMetaTitle": "Kategorie-Meta-Titel",
+            "fieldCategoryMetaDescription": "Kategorie-Meta-Beschreibung",
+            "fieldCategoryKeywords": "Kategorie-Suchbegriffe",
             "notReadyTitle": "Noch nichts zu prüfen",
             "notReadySubline": "Dieser Prozess hat noch keine Ergebnisse erzeugt."
         },
@@ -394,10 +397,28 @@
         "categoryTemplateDetail": {
             "titleNew": "Neues Kategorie-Template",
             "cardGeneral": "Allgemein",
+            "cardContent": "Kategorie-Inhalte",
+            "cardSeo": "Kategorie-SEO",
+            "contentHelp": "Lege fest, wie der sichtbare Kategoriename und die Beschreibung in jeder Sprache generiert werden.",
+            "seoHelp": "Steuere die Kategorie-Metadaten für Suchmaschinen und die Shopware-Suche. Formuliere die Vorgaben passend zu den Produkten dieser Kategorie.",
             "card_name": "Kategoriename",
             "card_description": "Kategoriebeschreibung",
             "fieldParentCategory": "Übergeordnete Kategorie",
-            "fieldParentCategoryHelp": "Neue Kategorien werden unterhalb dieser Kategorie angelegt."
+            "fieldParentCategoryHelp": "Neue Kategorien werden unterhalb dieser Kategorie angelegt.",
+            "field": {
+                "name": "Kategoriename",
+                "description": "Kategoriebeschreibung",
+                "metaTitle": "Meta-Titel",
+                "metaDescription": "Meta-Beschreibung",
+                "keywords": "Suchbegriffe"
+            },
+            "fieldHelp": {
+                "name": "Der kurze, sichtbare Name in Navigation und Kategorieseiten.",
+                "description": "Ein einleitender Kategorietext, der das Sortiment erklärt und die Auffindbarkeit unterstützt.",
+                "metaTitle": "Titel für Suchergebnisse; die generierte Ausgabe ist auf 60 Zeichen begrenzt.",
+                "metaDescription": "Zusammenfassung für Suchergebnisse; die generierte Ausgabe ist auf 160 Zeichen begrenzt.",
+                "keywords": "Eine fokussierte, kommagetrennte Liste für die Shopware-Kategoriesuche."
+            }
         }
     }
 }

@@ -49,13 +49,22 @@ test('category template files omit installation-specific parent category IDs', (
     const contents = serializeTemplateFile({
         name: 'Technical category',
         parentCategoryId: 'installation-specific-id',
-        config: { name: { mode: 'instruction', 'en-GB': 'Write a category name' } },
+        config: {
+            name: { mode: 'instruction', 'en-GB': 'Write a category name' },
+            metaTitle: { mode: 'instruction', 'en-GB': 'Include the product family' },
+            metaDescription: { mode: 'instruction', 'en-GB': 'Summarize the category range' },
+            keywords: { mode: 'placeholder', 'en-GB': '[product_family], accessories' },
+        },
     }, 'category', new Date('2026-07-28T12:00:00.000Z'));
     const file = JSON.parse(contents);
 
     assert.equal(file.type, 'category');
     assert.equal('parentCategoryId' in file.template, false);
     assert.deepEqual(parseTemplateFile(contents).template.config, file.template.config);
+    assert.equal(
+        parseTemplateFile(contents).template.config.metaTitle['en-GB'],
+        'Include the product family',
+    );
 });
 
 test('file reader accepts JSON files and enforces the file contract', async () => {

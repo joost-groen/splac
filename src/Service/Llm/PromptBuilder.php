@@ -322,6 +322,9 @@ PROMPT;
     ): string {
         $nameSpec = $this->textModeSpec($categoryTemplateConfig['name'] ?? [], $locales, 'category name');
         $descriptionSpec = $this->textModeSpec($categoryTemplateConfig['description'] ?? [], $locales, 'category description');
+        $metaTitleSpec = $this->textModeSpec($categoryTemplateConfig['metaTitle'] ?? [], $locales, 'category meta title');
+        $metaDescriptionSpec = $this->textModeSpec($categoryTemplateConfig['metaDescription'] ?? [], $locales, 'category meta description');
+        $keywordsSpec = $this->textModeSpec($categoryTemplateConfig['keywords'] ?? [], $locales, 'category search keywords');
         $localeList = $this->describeLocales($locales);
         $audienceContext = $this->targetMarketSection($targetMarket);
 
@@ -333,11 +336,15 @@ Product: {$productNameHint}
 
 Category name: {$nameSpec}
 Category description: {$descriptionSpec}
+Category meta title: {$metaTitleSpec}
+Category meta description: {$metaDescriptionSpec}
+Category search keywords: {$keywordsSpec}
 
 Return a JSON object of this shape:
-{"name": {"<locale>": ""}, "description": {"<locale>": ""}}
+{"name": {"<locale>": ""}, "description": {"<locale>": ""}, "metaTitle": {"<locale>": ""}, "metaDescription": {"<locale>": ""}, "keywords": {"<locale>": ""}}
 
 Generate in the correct language for each locale ({$localeList}).
+SEO guidelines: metaTitle must be at most 60 characters. metaDescription must be at most 160 characters, accurately summarize the category and encourage a relevant search click. keywords must be a concise comma-separated string without duplicates.
 
 SOURCE DOCUMENTS:
 {$sourceText}

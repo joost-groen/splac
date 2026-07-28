@@ -72,6 +72,13 @@ Shopware.Component.register('splac-review', {
                         empty.push(`${field} (${locale})`);
                     }
                 });
+                if (this.hasCategoryOutput && this.output.category) {
+                    ['name', 'metaTitle', 'metaDescription', 'keywords'].forEach((field) => {
+                        if (this.output.category[field] && this.output.category[field][locale] === '') {
+                            empty.push(`category.${field} (${locale})`);
+                        }
+                    });
+                }
             });
             ['ean', 'manufacturerNumber'].forEach((field) => {
                 if (field in this.output && this.output[field] === '') {

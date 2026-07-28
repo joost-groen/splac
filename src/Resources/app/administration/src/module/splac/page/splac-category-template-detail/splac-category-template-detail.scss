@@ -1,0 +1,32 @@
+.splac-category-template-detail {
+    &__card-intro {
+        margin: 0 0 20px;
+        color: #52667a;
+        line-height: 1.5;
+    }
+
+    &__field-section {
+        padding: 4px 0 24px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid #e5e9f0;
+
+        &:last-child {
+            padding-bottom: 0;
+            margin-bottom: 0;
+            border-bottom: 0;
+        }
+
+        h3 {
+            margin: 0 0 4px;
+            color: #172b4d;
+            font-size: 16px;
+        }
+    }
+
+    &__field-help {
+        margin: 0 0 16px;
+        color: #607182;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+}

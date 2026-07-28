@@ -151,6 +151,9 @@
             "fieldProperties": "Selected properties",
             "fieldCategoryName": "Category name",
             "fieldCategoryDescription": "Category description",
+            "fieldCategoryMetaTitle": "Category meta title",
+            "fieldCategoryMetaDescription": "Category meta description",
+            "fieldCategoryKeywords": "Category search keywords",
             "notReadyTitle": "Nothing to review yet",
             "notReadySubline": "This process has not produced any output yet."
         },
@@ -394,10 +397,28 @@
         "categoryTemplateDetail": {
             "titleNew": "New category template",
             "cardGeneral": "General",
+            "cardContent": "Category content",
+            "cardSeo": "Category SEO",
+            "contentHelp": "Define how the customer-facing category name and description should be generated in each language.",
+            "seoHelp": "Control the category metadata that search engines and Shopware search use. Keep instructions specific to the products grouped in this category.",
             "card_name": "Category name",
             "card_description": "Category description",
             "fieldParentCategory": "Parent category",
-            "fieldParentCategoryHelp": "New categories are created below this category."
+            "fieldParentCategoryHelp": "New categories are created below this category.",
+            "field": {
+                "name": "Category name",
+                "description": "Category description",
+                "metaTitle": "Meta title",
+                "metaDescription": "Meta description",
+                "keywords": "Search keywords"
+            },
+            "fieldHelp": {
+                "name": "The concise, customer-facing name shown in navigation and category pages.",
+                "description": "Introductory category copy that explains the product range and supports discovery.",
+                "metaTitle": "Search-result title; generated output is limited to 60 characters.",
+                "metaDescription": "Search-result summary; generated output is limited to 160 characters.",
+                "keywords": "A focused comma-separated set of terms used by Shopware category search."
+            }
         }
     }
 }

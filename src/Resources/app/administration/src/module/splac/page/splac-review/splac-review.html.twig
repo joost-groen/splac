@@ -247,6 +247,26 @@
                             :label="`${$tc('splac.review.fieldCategoryDescription')} (${locale})`"
                             :disabled="isDone"
                         ></sw-textarea-field>
+                        <sw-text-field
+                            v-if="output.category.metaTitle"
+                            v-model:value="output.category.metaTitle[locale]"
+                            :label="`${$tc('splac.review.fieldCategoryMetaTitle')} (${locale})`"
+                            :disabled="isDone"
+                            :max-length="60"
+                        ></sw-text-field>
+                        <sw-textarea-field
+                            v-if="output.category.metaDescription"
+                            v-model="output.category.metaDescription[locale]"
+                            :label="`${$tc('splac.review.fieldCategoryMetaDescription')} (${locale})`"
+                            :disabled="isDone"
+                            :max-length="160"
+                        ></sw-textarea-field>
+                        <sw-text-field
+                            v-if="output.category.keywords"
+                            v-model:value="output.category.keywords[locale]"
+                            :label="`${$tc('splac.review.fieldCategoryKeywords')} (${locale})`"
+                            :disabled="isDone"
+                        ></sw-text-field>
                     </template>
                 </sw-card>
             </template>

@@ -538,6 +538,9 @@ class ProcessGenerator
             'category' => [
                 'name' => $this->localeMap($data['name'] ?? [], $locales),
                 'description' => $this->localeMap($data['description'] ?? [], $locales),
+                'metaTitle' => $this->localeMap($data['metaTitle'] ?? [], $locales),
+                'metaDescription' => $this->localeMap($data['metaDescription'] ?? [], $locales),
+                'keywords' => $this->localeMap($data['keywords'] ?? [], $locales),
                 'parentCategoryId' => $categoryTemplate->getParentCategoryId(),
             ],
         ];
