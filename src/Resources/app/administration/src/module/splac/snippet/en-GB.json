@@ -165,7 +165,25 @@
             "emptyTitle": "No listing templates",
             "emptySubline": "Create a template that defines the structure of your product descriptions.",
             "emptyCategoryTitle": "No category templates",
-            "emptyCategorySubline": "Category templates let the LLM create new categories."
+            "emptyCategorySubline": "Category templates let the LLM create new categories.",
+            "importTemplate": "Import template",
+            "exportTemplate": "Export as file",
+            "importModalTitle": "Import template",
+            "importModalHelp": "Review the template before adding it. Importing always creates a new template and never replaces existing data.",
+            "importConfirm": "Import",
+            "importDuplicateWarning": "A template with this name already exists. You can change the name now or import it as a separate copy.",
+            "importCategoryNotice": "Parent categories are specific to each shop and are not included in template files. Select the parent category after importing.",
+            "importSuccess": "“{name}” was imported.",
+            "importErrorInvalid": "The selected file does not contain valid JSON.",
+            "importErrorFormat": "This is not a valid Splac template file.",
+            "importErrorVersion": "This template file was created with an unsupported format version.",
+            "importErrorTooLarge": "The template file is too large. Select a JSON file smaller than 2 MB.",
+            "importErrorFileType": "Select a JSON template file.",
+            "importErrorNameLength": "The template name must not exceed 255 characters.",
+            "importType": {
+                "listing": "Listing template",
+                "category": "Category template"
+            }
         },
         "templateDetail": {
             "titleNew": "New listing template",

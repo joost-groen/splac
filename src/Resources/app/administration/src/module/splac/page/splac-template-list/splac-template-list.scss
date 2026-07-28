@@ -1,9 +1,39 @@
 .splac-template-list {
+    &__file-input {
+        display: none;
+    }
+
     .splac-icon--active {
         color: #37d046;
     }
 
     .splac-icon--inactive {
         color: #de294c;
+    }
+
+    &__import-summary {
+        margin-bottom: 24px;
+
+        p {
+            margin: 10px 0 0;
+            color: #52667a;
+            line-height: 1.5;
+        }
+    }
+
+    &__import-type {
+        display: inline-flex;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: #eef0ff;
+        color: #4f46a5;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    &__import-modal {
+        .sw-alert {
+            margin-top: 16px;
+        }
     }
 }

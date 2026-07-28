@@ -165,7 +165,25 @@
             "emptyTitle": "Keine Listing-Templates",
             "emptySubline": "Lege ein Template an, das die Struktur deiner Produktbeschreibungen definiert.",
             "emptyCategoryTitle": "Keine Kategorie-Templates",
-            "emptyCategorySubline": "Mit Kategorie-Templates kann das LLM neue Kategorien erstellen."
+            "emptyCategorySubline": "Mit Kategorie-Templates kann das LLM neue Kategorien erstellen.",
+            "importTemplate": "Template importieren",
+            "exportTemplate": "Als Datei exportieren",
+            "importModalTitle": "Template importieren",
+            "importModalHelp": "Prüfe das Template, bevor du es hinzufügst. Beim Import wird immer ein neues Template angelegt und kein bestehender Inhalt überschrieben.",
+            "importConfirm": "Importieren",
+            "importDuplicateWarning": "Ein Template mit diesem Namen ist bereits vorhanden. Du kannst den Namen jetzt ändern oder es als separate Kopie importieren.",
+            "importCategoryNotice": "Übergeordnete Kategorien sind shopabhängig und nicht in Template-Dateien enthalten. Wähle die übergeordnete Kategorie nach dem Import aus.",
+            "importSuccess": "„{name}“ wurde importiert.",
+            "importErrorInvalid": "Die ausgewählte Datei enthält kein gültiges JSON.",
+            "importErrorFormat": "Dies ist keine gültige Splac-Template-Datei.",
+            "importErrorVersion": "Diese Template-Datei wurde mit einer nicht unterstützten Formatversion erstellt.",
+            "importErrorTooLarge": "Die Template-Datei ist zu groß. Wähle eine JSON-Datei, die kleiner als 2 MB ist.",
+            "importErrorFileType": "Wähle eine JSON-Template-Datei aus.",
+            "importErrorNameLength": "Der Template-Name darf höchstens 255 Zeichen lang sein.",
+            "importType": {
+                "listing": "Listing-Template",
+                "category": "Kategorie-Template"
+            }
         },
         "templateDetail": {
             "titleNew": "Neues Listing-Template",

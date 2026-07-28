@@ -4,6 +4,21 @@
     </template>
 
     <template #smart-bar-actions>
+        <input
+            ref="templateFileInput"
+            class="splac-template-list__file-input"
+            type="file"
+            accept=".json,application/json"
+            @change="onImportFileSelected"
+        >
+        <sw-button
+            variant="ghost"
+            size="small"
+            :disabled="isImporting"
+            @click="openImportFilePicker"
+        >
+            {{ $tc('splac.templates.importTemplate') }}
+        </sw-button>
         <sw-button
             variant="ghost"
             size="small"
@@ -44,6 +59,9 @@
                             <sw-context-menu-item @click="$router.push({ name: 'splac.templateDetail', params: { id: item.id } })">
                                 {{ $tc('global.default.edit') }}
                             </sw-context-menu-item>
+                            <sw-context-menu-item @click="exportTemplate(item, 'listing')">
+                                {{ $tc('splac.templates.exportTemplate') }}
+                            </sw-context-menu-item>
                             <sw-context-menu-item variant="danger" @click="onDeleteTemplate(item)">
                                 {{ $tc('global.default.delete') }}
                             </sw-context-menu-item>
@@ -76,6 +94,9 @@
                             <sw-context-menu-item @click="$router.push({ name: 'splac.categoryTemplateDetail', params: { id: item.id } })">
                                 {{ $tc('global.default.edit') }}
                             </sw-context-menu-item>
+                            <sw-context-menu-item @click="exportTemplate(item, 'category')">
+                                {{ $tc('splac.templates.exportTemplate') }}
+                            </sw-context-menu-item>
                             <sw-context-menu-item variant="danger" @click="onDeleteCategoryTemplate(item)">
                                 {{ $tc('global.default.delete') }}
                             </sw-context-menu-item>
@@ -90,5 +111,63 @@
                 ></sw-empty-state>
             </sw-card>
         </sw-card-view>
+
+        <sw-modal
+            v-if="pendingImport"
+            class="splac-template-list__import-modal"
+            :title="$tc('splac.templates.importModalTitle')"
+            @modal-close="closeImportModal"
+        >
+            <div class="splac-template-list__import-summary">
+                <span class="splac-template-list__import-type">
+                    {{ pendingImportTypeLabel }}
+                </span>
+                <p>{{ $tc('splac.templates.importModalHelp') }}</p>
+            </div>
+
+            <sw-text-field
+                v-model:value="pendingImport.template.name"
+                :label="$tc('splac.templateDetail.fieldName')"
+                :disabled="isImporting"
+                :max-length="255"
+                required
+            ></sw-text-field>
+
+            <sw-alert
+                v-if="pendingImportHasDuplicateName"
+                variant="warning"
+                :closable="false"
+            >
+                {{ $tc('splac.templates.importDuplicateWarning') }}
+            </sw-alert>
+
+            <sw-alert
+                v-if="pendingImport.type === 'category'"
+                variant="info"
+                :closable="false"
+            >
+                {{ $tc('splac.templates.importCategoryNotice') }}
+            </sw-alert>
+
+            <template #modal-footer>
+                <sw-button
+                    size="small"
+                    :disabled="isImporting"
+                    @click="closeImportModal"
+                >
+                    {{ $tc('global.default.cancel') }}
+                </sw-button>
+                <sw-button-process
+                    variant="primary"
+                    size="small"
+                    :is-loading="isImporting"
+                    :process-success="false"
+                    :disabled="!isPendingImportNameValid"
+                    @click="confirmImport"
+                >
+                    {{ $tc('splac.templates.importConfirm') }}
+                </sw-button-process>
+            </template>
+        </sw-modal>
     </template>
 </sw-page>
