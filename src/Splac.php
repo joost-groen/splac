@@ -17,6 +17,8 @@ class Splac extends Plugin
         }
 
         $connection = $this->container->get(Connection::class);
+
+        $connection->executeStatement('DROP TABLE IF EXISTS `splac_llm_usage`');
         $connection->executeStatement('DROP TABLE IF EXISTS `splac_process_source`');
         $connection->executeStatement('DROP TABLE IF EXISTS `splac_process`');
         $connection->executeStatement('DROP TABLE IF EXISTS `splac_category_template`');
