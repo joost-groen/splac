@@ -13,6 +13,10 @@ class LlmUsageService
 
     private const TOKENS_PER_RATE_UNIT = 1000000;
 
+    private const CACHE_WRITE_RATE_MULTIPLIER = 1.25;
+
+    private const CACHE_READ_RATE_MULTIPLIER = 0.1;
+
     public function __construct(
         private readonly Connection $connection,
         private readonly SystemConfigService $systemConfig,
@@ -31,7 +35,11 @@ class LlmUsageService
         $ocrPageRate = $this->positiveConfigFloat('ocrPageCost');
         $currency = $this->currency();
 
-        $cost = ($response->inputTokens * $inputRate / self::TOKENS_PER_RATE_UNIT)
+        $billableInputTokens = $response->inputTokens
+            + ($response->cacheCreationInputTokens * self::CACHE_WRITE_RATE_MULTIPLIER)
+            + ($response->cacheReadInputTokens * self::CACHE_READ_RATE_MULTIPLIER);
+
+        $cost = ($billableInputTokens * $inputRate / self::TOKENS_PER_RATE_UNIT)
             + ($response->outputTokens * $outputRate / self::TOKENS_PER_RATE_UNIT)
             + ($response->ocrPages * $ocrPageRate);
         $cost = round($cost, 8);
@@ -61,6 +69,8 @@ class LlmUsageService
                 'model' => mb_substr($model, 0, 255),
                 'operation' => mb_substr($operation, 0, 64),
                 'input_tokens' => $response->inputTokens,
+                'cache_creation_input_tokens' => $response->cacheCreationInputTokens,
+                'cache_read_input_tokens' => $response->cacheReadInputTokens,
                 'output_tokens' => $response->outputTokens,
                 'ocr_pages' => $response->ocrPages,
                 'input_token_rate' => $inputRate,

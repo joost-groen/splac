@@ -34,6 +34,7 @@ PROMPT;
         string $systemPrompt,
         string $userPrompt,
         CompletionOptions $options,
+        ?string $cacheableContext = null,
     ): LlmResponse;
 
     /**

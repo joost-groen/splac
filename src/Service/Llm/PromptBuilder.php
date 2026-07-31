@@ -100,7 +100,6 @@ PROMPT;
         array $descriptionTemplates,
         array $locales,
         array $placeholderGuidance,
-        string $sourceText,
         string $productNameHint,
         ?string $userInstruction,
         ?string $targetMarket = null,
@@ -154,9 +153,6 @@ Return a JSON object of this shape:
 
 Fill the values in the correct language for each locale ({$localeList}).
 If a placeholder's information is not present in the sources, use an empty string.
-
-SOURCE DOCUMENTS:
-{$sourceText}
 PROMPT;
     }
 
@@ -169,7 +165,6 @@ PROMPT;
         array $fieldModes,
         array $fields,
         array $locales,
-        string $sourceText,
         string $productNameHint,
         ?string $userInstruction,
         ?string $targetMarket = null,
@@ -227,9 +222,6 @@ Return a JSON object of this shape:
 {"fields": {"<locale>": {"{$fieldList}": "<value>"}}}
 
 Generate each field in the correct language for each locale ({$localeList}).
-
-SOURCE DOCUMENTS:
-{$sourceText}
 PROMPT;
     }
 
@@ -238,7 +230,6 @@ PROMPT;
      */
     public function buildPropertiesPrompt(
         array $propertyGroups,
-        string $sourceText,
         string $productNameHint,
         ?string $targetMarket = null,
     ): string
@@ -261,9 +252,6 @@ Rules:
 
 Return a JSON object of this shape:
 {"optionIds": ["<option id>", "..."]}
-
-SOURCE DOCUMENTS:
-{$sourceText}
 PROMPT;
     }
 
@@ -274,7 +262,6 @@ PROMPT;
     public function buildClassificationPrompt(
         array $manufacturers,
         array $locales,
-        string $sourceText,
         string $productNameHint,
         ?string $productNumberPattern,
         ?string $targetMarket = null,
@@ -303,9 +290,6 @@ Product: {$productNameHint}
 
 Return a JSON object of this shape:
 {"productName": {"<locale>": ""}, "manufacturerId": "", "manufacturerName": "", "ean": "", "manufacturerNumber": "", "productNumber": "", "tags": [], "keywords": {"<locale>": ""}}
-
-SOURCE DOCUMENTS:
-{$sourceText}
 PROMPT;
     }
 
@@ -316,7 +300,6 @@ PROMPT;
     public function buildCategoryPrompt(
         array $categoryTemplateConfig,
         array $locales,
-        string $sourceText,
         string $productNameHint,
         ?string $targetMarket = null,
     ): string {
@@ -345,9 +328,6 @@ Return a JSON object of this shape:
 
 Generate in the correct language for each locale ({$localeList}).
 SEO guidelines: metaTitle must be at most 60 characters. metaDescription must be at most 160 characters, accurately summarize the category and encourage a relevant search click. keywords must be a concise comma-separated string without duplicates.
-
-SOURCE DOCUMENTS:
-{$sourceText}
 PROMPT;
     }
 

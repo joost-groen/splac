@@ -36,9 +36,10 @@ class AnthropicClient implements LlmClientInterface
         string $systemPrompt,
         string $userPrompt,
         CompletionOptions $options,
+        ?string $cacheableContext = null,
     ): LlmResponse
     {
-        $payload = $this->messagePayload($model, $systemPrompt, $userPrompt, $options);
+        $payload = $this->messagePayload($model, $systemPrompt, $userPrompt, $options, $cacheableContext);
 
         if ($options->batchProcessing) {
             return $this->completeBatch($apiKey, $payload, $options->batchId);
@@ -57,6 +58,7 @@ class AnthropicClient implements LlmClientInterface
                     $systemPrompt,
                     $userPrompt,
                     $options->withForcedAdaptiveThinking(),
+                    $cacheableContext,
                 );
                 [$statusCode, $responseData] = $this->sendMessageRequest($apiKey, $payload);
             }
@@ -98,7 +100,6 @@ class AnthropicClient implements LlmClientInterface
                             ],
                         ],
                     ]],
-                    'temperature' => 0,
                 ],
                 'timeout' => 180,
             ]);
@@ -139,19 +140,18 @@ class AnthropicClient implements LlmClientInterface
         string $systemPrompt,
         string $userPrompt,
         CompletionOptions $options,
+        ?string $cacheableContext,
     ): array {
         $payload = [
             'model' => $model,
             'max_tokens' => 8192,
             'system' => $systemPrompt,
             'messages' => [
-                ['role' => 'user', 'content' => $userPrompt],
+                ['role' => 'user', 'content' => $this->messageContent($userPrompt, $cacheableContext)],
             ],
         ];
 
         if (!$options->reasoningEnabled) {
-            $payload['temperature'] = 0.2;
-
             return $payload;
         }
 
@@ -178,6 +178,31 @@ class AnthropicClient implements LlmClientInterface
         $payload['max_tokens'] = max(8192, $budget + 8192);
 
         return $payload;
+    }
+
+    /**
+     * @return string|list<array<string, mixed>>
+     */
+    private function messageContent(string $userPrompt, ?string $cacheableContext): string|array
+    {
+        if ($cacheableContext === null || trim($cacheableContext) === '') {
+            return $userPrompt;
+        }
+
+        return [
+            [
+                'type' => 'text',
+                'text' => "SOURCE DOCUMENTS:\n{$cacheableContext}",
+                'cache_control' => [
+                    'type' => 'ephemeral',
+                    'ttl' => '5m',
+                ],
+            ],
+            [
+                'type' => 'text',
+                'text' => "TASK INSTRUCTIONS:\n{$userPrompt}",
+            ],
+        ];
     }
 
     /**
@@ -340,9 +365,11 @@ class AnthropicClient implements LlmClientInterface
         }
 
         return new LlmResponse(
-            $content,
-            $this->usageValue($data, 'input_tokens'),
-            $this->usageValue($data, 'output_tokens'),
+            text: $content,
+            inputTokens: $this->usageValue($data, 'input_tokens'),
+            outputTokens: $this->usageValue($data, 'output_tokens'),
+            cacheCreationInputTokens: $this->usageValue($data, 'cache_creation_input_tokens'),
+            cacheReadInputTokens: $this->usageValue($data, 'cache_read_input_tokens'),
         );
     }
 

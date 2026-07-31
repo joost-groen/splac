@@ -36,8 +36,11 @@ class GeminiClient implements LlmClientInterface
         string $systemPrompt,
         string $userPrompt,
         CompletionOptions $options,
+        ?string $cacheableContext = null,
     ): LlmResponse
     {
+        $userPrompt = $this->combinedUserPrompt($userPrompt, $cacheableContext);
+
         $url = \sprintf(
             'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
             rawurlencode($model)
@@ -146,6 +149,15 @@ class GeminiClient implements LlmClientInterface
             $this->usageValue($data, 'promptTokenCount'),
             $this->usageValue($data, 'candidatesTokenCount') + $this->usageValue($data, 'thoughtsTokenCount'),
         );
+    }
+
+    private function combinedUserPrompt(string $userPrompt, ?string $cacheableContext): string
+    {
+        if ($cacheableContext === null || trim($cacheableContext) === '') {
+            return $userPrompt;
+        }
+
+        return "SOURCE DOCUMENTS:\n{$cacheableContext}\n\nTASK INSTRUCTIONS:\n{$userPrompt}";
     }
 
     public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): LlmResponse

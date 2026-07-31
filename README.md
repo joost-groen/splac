@@ -32,8 +32,12 @@ LLM generates everything else. Nothing goes live without review — the product 
 - **Per-listing Anthropic controls** for optional extended reasoning (low, medium, or high)
   and asynchronous Message Batch processing. Reasoning blocks are kept separate from the
   final structured JSON, while batch polling yields the worker between status checks.
-- **Usage cost tracking** based on provider-reported token counts and configurable input,
-  output, and OCR page rates, with per-listing costs and 24-hour, 30-day, and all-time totals.
+- **Anthropic prompt caching** keeps each listing's stable source-document context in a
+  five-minute provider cache across classification, description, SEO, property, and category
+  requests, reducing repeated input-token processing without changing the generated prompts.
+- **Usage cost tracking** based on provider-reported regular input, prompt-cache write/read,
+  and output token counts plus configurable base token and OCR page rates, with per-listing
+  costs and 24-hour, 30-day, and all-time totals.
   Changing the configured currency starts a separate set of dashboard totals; historical
   ledger entries retain the currency and rates used when each request was made.
 - **Review screen** with per-field editing, HTML preview, and per-field regeneration
@@ -71,8 +75,10 @@ Mistral uses its Document AI OCR endpoint. The transcription is stored once and 
 every generation step.
 
 The **OCR mode** setting offers provider OCR with local fallback (default), provider OCR
-only, or local extraction only. Local extraction can use `pdftoppm` and Tesseract (including
-English language data) for scanned pages or embedded fonts without a usable Unicode map.
+only, or local extraction only. Local extraction uses Poppler's `pdftotext` for PDFs whose
+embedded object structure is unsupported by the PHP parser, and can use `pdftoppm` plus
+Tesseract (including English language data) for scanned pages or embedded fonts without a
+usable Unicode map.
 
 On Debian/Ubuntu:
 

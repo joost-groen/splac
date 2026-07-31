@@ -45,12 +45,20 @@ class LlmService
         ?string $processId = null,
         string $operation = 'generation',
         ?CompletionOptions $options = null,
+        ?string $cacheableContext = null,
     ): array
     {
         [$client, $apiKey, $model, $provider] = $this->configuredClient();
         $options = ($options ?? new CompletionOptions())->withoutUnsupportedFeatures($client);
 
-        $response = $client->complete($apiKey, $model, $systemPrompt, $userPrompt, $options);
+        $response = $client->complete(
+            $apiKey,
+            $model,
+            $systemPrompt,
+            $userPrompt,
+            $options,
+            $cacheableContext,
+        );
         $this->usageService->record($processId, $provider, $model, $operation, $response);
 
         return $this->decodeJson($response->text);

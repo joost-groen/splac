@@ -189,7 +189,6 @@ class ProcessGenerator
         $prompt = $this->promptBuilder->buildClassificationPrompt(
             $manufacturers,
             $locales,
-            $sourceText,
             $productNameHint,
             \is_string($pattern) ? $pattern : null,
             $this->stringConfigValue($config, 'targetMarket'),
@@ -201,6 +200,7 @@ class ProcessGenerator
             $processId,
             self::STEP_CLASSIFICATION,
             $completionOptions,
+            $sourceText,
         );
 
         $result = [
@@ -265,7 +265,6 @@ class ProcessGenerator
             $descriptionTemplates,
             $locales,
             $this->descriptionPlaceholderGuidance($config, $locales),
-            $sourceText,
             $productNameHint,
             \is_string($input['descriptionInstruction'] ?? null) ? $input['descriptionInstruction'] : null,
             $this->stringConfigValue($config, 'targetMarket'),
@@ -277,6 +276,7 @@ class ProcessGenerator
             $processId,
             self::STEP_DESCRIPTION,
             $completionOptions,
+            $sourceText,
         );
         $placeholderValues = \is_array($data['placeholders'] ?? null) ? $data['placeholders'] : [];
         $blocksByLocale = \is_array($config['descriptionBlocks'] ?? null)
@@ -398,7 +398,6 @@ class ProcessGenerator
             \is_array($fieldModes) ? $fieldModes : [],
             ['metaTitle', 'metaDescription'],
             $locales,
-            $sourceText,
             $productNameHint,
             \is_string($input['seoInstruction'] ?? null) ? $input['seoInstruction'] : null,
             $this->stringConfigValue($config, 'targetMarket'),
@@ -410,6 +409,7 @@ class ProcessGenerator
             $processId,
             self::STEP_SEO,
             $completionOptions,
+            $sourceText,
         );
         $fields = \is_array($data['fields'] ?? null) ? $data['fields'] : [];
 
@@ -472,7 +472,6 @@ class ProcessGenerator
         $config = $template->getConfig() ?? [];
         $prompt = $this->promptBuilder->buildPropertiesPrompt(
             $groups,
-            $sourceText,
             $productNameHint,
             $this->stringConfigValue($config, 'targetMarket'),
         );
@@ -482,6 +481,7 @@ class ProcessGenerator
             $processId,
             self::STEP_PROPERTIES,
             $completionOptions,
+            $sourceText,
         );
 
         $validIds = [];
@@ -521,7 +521,6 @@ class ProcessGenerator
         $prompt = $this->promptBuilder->buildCategoryPrompt(
             $categoryTemplate->getConfig() ?? [],
             $locales,
-            $sourceText,
             $productNameHint,
             $this->stringConfigValue($process->getTemplate()?->getConfig() ?? [], 'targetMarket'),
         );
@@ -532,6 +531,7 @@ class ProcessGenerator
             $process->getId(),
             self::STEP_CATEGORY,
             $completionOptions,
+            $sourceText,
         );
 
         return [

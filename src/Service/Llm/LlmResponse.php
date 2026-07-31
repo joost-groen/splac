@@ -9,6 +9,8 @@ final readonly class LlmResponse
         public int $inputTokens = 0,
         public int $outputTokens = 0,
         public int $ocrPages = 0,
+        public int $cacheCreationInputTokens = 0,
+        public int $cacheReadInputTokens = 0,
     ) {
     }
 }

@@ -32,8 +32,11 @@ class OpenAiClient implements LlmClientInterface
         string $systemPrompt,
         string $userPrompt,
         CompletionOptions $options,
+        ?string $cacheableContext = null,
     ): LlmResponse
     {
+        $userPrompt = $this->combinedUserPrompt($userPrompt, $cacheableContext);
+
         try {
             $response = $this->httpClient->request('POST', 'https://api.openai.com/v1/chat/completions', [
                 'headers' => [
@@ -67,6 +70,15 @@ class OpenAiClient implements LlmClientInterface
             $this->usageValue($data, 'prompt_tokens'),
             $this->usageValue($data, 'completion_tokens'),
         );
+    }
+
+    private function combinedUserPrompt(string $userPrompt, ?string $cacheableContext): string
+    {
+        if ($cacheableContext === null || trim($cacheableContext) === '') {
+            return $userPrompt;
+        }
+
+        return "SOURCE DOCUMENTS:\n{$cacheableContext}\n\nTASK INSTRUCTIONS:\n{$userPrompt}";
     }
 
     public function ocrPdf(string $apiKey, string $model, string $pdfContent, string $filename): LlmResponse
