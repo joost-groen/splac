@@ -111,7 +111,6 @@
                 <sw-empty-state
                     v-else-if="!isLoading"
                     :title="$tc('splac.dashboard.emptyTitle')"
-                    :subline="$tc('splac.dashboard.emptySubline')"
                     :absolute="false"
                 >
                     <template #actions>
@@ -135,11 +134,7 @@
 
         <div v-else class="splac-dashboard__statistics">
             <div class="splac-dashboard__statistics-heading">
-                <span class="splac-dashboard__statistics-eyebrow">
-                    {{ $tc('splac.dashboard.statisticsEyebrow') }}
-                </span>
                 <h3>{{ $tc('splac.dashboard.statisticsOverviewTitle') }}</h3>
-                <p>{{ $tc('splac.dashboard.statisticsOverviewHelp') }}</p>
             </div>
 
             <div class="splac-dashboard__metric-grid">
@@ -148,28 +143,24 @@
                         {{ $tc('splac.dashboard.totalCompleted') }}
                     </span>
                     <strong>{{ formatNumber(statistics ? statistics.totalCompleted : 0) }}</strong>
-                    <small>{{ $tc('splac.dashboard.totalCompletedHelp') }}</small>
                 </div>
                 <div class="splac-dashboard__metric">
                     <span class="splac-dashboard__metric-label">
                         {{ $tc('splac.dashboard.startedLast30Days') }}
                     </span>
                     <strong>{{ formatNumber(statistics ? statistics.startedLast30Days : 0) }}</strong>
-                    <small>{{ $tc('splac.dashboard.startedLast30DaysHelp') }}</small>
                 </div>
                 <div class="splac-dashboard__metric">
                     <span class="splac-dashboard__metric-label">
                         {{ $tc('splac.dashboard.successRate') }}
                     </span>
                     <strong>{{ formatPercentage(statistics ? statistics.successRate : 0) }}</strong>
-                    <small>{{ $tc('splac.dashboard.successRateHelp') }}</small>
                 </div>
                 <div class="splac-dashboard__metric">
                     <span class="splac-dashboard__metric-label">
                         {{ $tc('splac.dashboard.activeProcesses') }}
                     </span>
                     <strong>{{ formatNumber(statistics ? statistics.activeProcesses : 0) }}</strong>
-                    <small>{{ $tc('splac.dashboard.activeProcessesHelp') }}</small>
                 </div>
             </div>
 
@@ -177,7 +168,6 @@
                 <div class="splac-dashboard__section-heading">
                     <div>
                         <h4>{{ $tc('splac.dashboard.costsTitle') }}</h4>
-                        <p>{{ $tc('splac.dashboard.costsHelp') }}</p>
                     </div>
                     <span class="splac-dashboard__currency">
                         {{ statistics ? statistics.currency : '—' }}
@@ -203,7 +193,6 @@
             <div class="splac-dashboard__efficiency">
                 <div>
                     <span>{{ $tc('splac.dashboard.averageCost') }}</span>
-                    <small>{{ $tc('splac.dashboard.averageCostHelp') }}</small>
                 </div>
                 <strong>{{ formatCost(statistics ? statistics.averageCostPerCompleted : 0) }}</strong>
             </div>

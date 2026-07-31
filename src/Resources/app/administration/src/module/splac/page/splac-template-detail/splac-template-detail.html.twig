@@ -77,10 +77,6 @@
                 :title="$tc('splac.templateDetail.cardAiGuidance')"
                 :is-loading="isLoading"
             >
-                <p class="splac-template-detail__hint">
-                    {{ $tc('splac.templateDetail.aiGuidanceHint') }}
-                </p>
-
                 <sw-textarea-field
                     v-model="item.config.targetMarket"
                     :label="$tc('splac.templateDetail.fieldTargetMarket')"
@@ -94,10 +90,6 @@
                 :title="$tc('splac.templateDetail.cardDescription')"
                 :is-loading="isLoading"
             >
-                <p class="splac-template-detail__hint">
-                    {{ $tc('splac.templateDetail.descriptionHint') }}
-                </p>
-
                 <div
                     class="splac-template-detail__locale-tabs"
                     :aria-label="$tc('splac.templateDetail.languageSwitcherLabel')"
@@ -119,7 +111,10 @@
                 <section class="splac-template-detail__layout-panel">
                     <header class="splac-template-detail__layout-panel-header">
                         <strong>{{ $tc('splac.templateDetail.descriptionFormattingTitle') }}</strong>
-                        <span>{{ $tc('splac.templateDetail.descriptionFormattingHelp') }}</span>
+                        <sw-help-text
+                            :text="$tc('splac.templateDetail.descriptionFormattingHelp')"
+                            :width="300"
+                        ></sw-help-text>
                     </header>
 
                     <div class="splac-template-detail__layout-options">
@@ -130,7 +125,10 @@
                             <div class="splac-template-detail__layout-option-header">
                                 <div class="splac-template-detail__layout-copy">
                                     <strong>{{ $tc('splac.templateDetail.blockSpacingTitle') }}</strong>
-                                    <span>{{ $tc('splac.templateDetail.blockSpacingHelp') }}</span>
+                                    <sw-help-text
+                                        :text="$tc('splac.templateDetail.blockSpacingHelp')"
+                                        :width="300"
+                                    ></sw-help-text>
                                 </div>
                                 <button
                                     type="button"
@@ -202,7 +200,10 @@
                             <div class="splac-template-detail__layout-option-header">
                                 <div class="splac-template-detail__layout-copy">
                                     <strong>{{ $tc('splac.templateDetail.tableFormattingToggleTitle') }}</strong>
-                                    <span>{{ $tc('splac.templateDetail.tableFormattingToggleHelp') }}</span>
+                                    <sw-help-text
+                                        :text="$tc('splac.templateDetail.tableFormattingToggleHelp')"
+                                        :width="320"
+                                    ></sw-help-text>
                                 </div>
                                 <button
                                     type="button"
@@ -224,13 +225,6 @@
                                     </span>
                                 </button>
                             </div>
-                            <div
-                                v-if="item.config.descriptionStyle.tableFormattingEnabled"
-                                class="splac-template-detail__layout-status"
-                            >
-                                <span aria-hidden="true">✓</span>
-                                <span>{{ $tc('splac.templateDetail.tableFormattingEnabledHint') }}</span>
-                            </div>
                             <button
                                 v-if="item.config.descriptionStyle.tableFormattingEnabled"
                                 type="button"
@@ -249,8 +243,14 @@
                                     }}
                                 </span>
                                 <span class="splac-template-detail__global-table-style-copy">
-                                    <strong>{{ $tc('splac.templateDetail.tablePresetApplyAllTitle') }}</strong>
-                                    <small>{{ $tc('splac.templateDetail.tablePresetApplyAllHelp') }}</small>
+                                    <span>
+                                        <strong>{{ $tc('splac.templateDetail.tablePresetApplyAllTitle') }}</strong>
+                                        <sw-help-text
+                                            :text="$tc('splac.templateDetail.tablePresetApplyAllHelp')"
+                                            :width="320"
+                                            @click.stop
+                                        ></sw-help-text>
+                                    </span>
                                 </span>
                                 <span class="splac-template-detail__global-table-style-action">
                                     {{
@@ -267,7 +267,6 @@
                 <div class="splac-template-detail__block-library">
                     <div>
                         <strong>{{ $tc('splac.templateDetail.addBlock') }}</strong>
-                        <span>{{ $tc('splac.templateDetail.addBlockHint') }}</span>
                     </div>
                     <div class="splac-template-detail__block-library-actions">
                         <sw-button size="small" @click="addDescriptionBlock('heading')">
@@ -288,7 +287,6 @@
                 <sw-empty-state
                     v-if="!activeDescriptionBlocks.length"
                     :title="$tc('splac.templateDetail.emptyBlocksTitle')"
-                    :subline="$tc('splac.templateDetail.emptyBlocksSubline')"
                     :absolute="false"
                 ></sw-empty-state>
 
@@ -401,16 +399,6 @@
                                     sanitize-field-name="product_translation.description"
                                     @update:value="updateRichText(block, $event)"
                                 ></sw-text-editor>
-                                <p
-                                    v-if="block.contentMode !== 'generated'"
-                                    class="splac-template-detail__rich-text-help"
-                                >
-                                    {{
-                                        block.contentMode === 'placeholder'
-                                            ? $tc('splac.templateDetail.inlinePlaceholderHelp')
-                                            : $tc('splac.templateDetail.richTextHelp')
-                                    }}
-                                </p>
                                 <div
                                     v-if="block.contentMode !== 'generated'"
                                     class="splac-template-detail__rich-text-actions"
@@ -441,7 +429,10 @@
                                 >
                                     <header>
                                         <strong>{{ $tc('splac.templateDetail.tablePresetTitle') }}</strong>
-                                        <span>{{ $tc('splac.templateDetail.tablePresetHelp') }}</span>
+                                        <sw-help-text
+                                            :text="$tc('splac.templateDetail.tablePresetHelp')"
+                                            :width="300"
+                                        ></sw-help-text>
                                     </header>
                                     <button
                                         type="button"
@@ -454,9 +445,6 @@
                                             <span class="splac-template-detail__preset-heading">
                                                 <strong>{{ $tc('splac.templateDetail.tablePresetRecommendedName') }}</strong>
                                                 <small>{{ $tc('splac.templateDetail.tablePresetRecommendedBadge') }}</small>
-                                            </span>
-                                            <span class="splac-template-detail__preset-description">
-                                                {{ $tc('splac.templateDetail.tablePresetRecommendedHelp') }}
                                             </span>
                                             <span class="splac-template-detail__preset-properties">
                                                 <small>34 / 66</small>
@@ -495,7 +483,6 @@
                                     <summary>
                                         <span>
                                             <strong>{{ $tc('splac.templateDetail.tableFormatting') }}</strong>
-                                            <small>{{ $tc('splac.templateDetail.tableFormattingSummary') }}</small>
                                         </span>
                                     </summary>
 
@@ -503,7 +490,6 @@
                                         <section class="splac-template-detail__format-group">
                                             <header>
                                                 <strong>{{ $tc('splac.templateDetail.tableBorders') }}</strong>
-                                                <span>{{ $tc('splac.templateDetail.tableBordersHelp') }}</span>
                                             </header>
                                             <div class="splac-template-detail__format-grid splac-template-detail__format-grid--three">
                                                 <sw-select-field
@@ -535,7 +521,6 @@
                                         <section class="splac-template-detail__format-group">
                                             <header>
                                                 <strong>{{ $tc('splac.templateDetail.tableCellColours') }}</strong>
-                                                <span>{{ $tc('splac.templateDetail.tableCellColoursHelp') }}</span>
                                             </header>
                                             <div class="splac-template-detail__format-grid splac-template-detail__format-grid--two">
                                                 <label class="splac-template-detail__color-field">
@@ -564,7 +549,6 @@
                                         <section class="splac-template-detail__format-group">
                                             <header>
                                                 <strong>{{ $tc('splac.templateDetail.tableColumnWidths') }}</strong>
-                                                <span>{{ $tc('splac.templateDetail.tableColumnWidthsHelp') }}</span>
                                             </header>
                                             <div class="splac-template-detail__column-layout">
                                                 <sw-number-field
@@ -599,7 +583,6 @@
                                         <section class="splac-template-detail__format-group">
                                             <header>
                                                 <strong>{{ $tc('splac.templateDetail.tableAlignment') }}</strong>
-                                                <span>{{ $tc('splac.templateDetail.tableAlignmentHelp') }}</span>
                                             </header>
                                             <div class="splac-template-detail__format-grid splac-template-detail__format-grid--three">
                                                 <sw-select-field
@@ -623,7 +606,6 @@
                                         <section class="splac-template-detail__format-group">
                                             <header>
                                                 <strong>{{ $tc('splac.templateDetail.tableSpacing') }}</strong>
-                                                <span>{{ $tc('splac.templateDetail.tableSpacingHelp') }}</span>
                                             </header>
                                             <div class="splac-template-detail__format-grid splac-template-detail__format-grid--three">
                                                 <sw-number-field
@@ -657,18 +639,10 @@
                                         </div>
                                     </div>
                                 </details>
-                                <div
-                                    v-else
-                                    class="splac-template-detail__table-format-disabled"
-                                >
-                                    {{ $tc('splac.templateDetail.tableFormattingDisabledHint') }}
-                                </div>
-
                                 <section class="splac-template-detail__table-editor">
                                     <header class="splac-template-detail__table-editor-header">
                                         <div>
                                             <strong>{{ $tc('splac.templateDetail.tablePropertiesTitle') }}</strong>
-                                            <span>{{ $tc('splac.templateDetail.tablePropertiesHelp') }}</span>
                                         </div>
                                         <span class="splac-template-detail__table-count">
                                             {{ block.rows.length }} {{ $tc('splac.templateDetail.tablePropertyCount') }}
@@ -747,14 +721,10 @@
 
                                     <div v-else class="splac-template-detail__table-empty">
                                         <span aria-hidden="true">+</span>
-                                        <div>
-                                            <strong>{{ $tc('splac.templateDetail.tableEmptyTitle') }}</strong>
-                                            <p>{{ $tc('splac.templateDetail.tableEmptyHelp') }}</p>
-                                        </div>
+                                        <strong>{{ $tc('splac.templateDetail.tableEmptyTitle') }}</strong>
                                     </div>
 
                                     <footer class="splac-template-detail__table-editor-footer">
-                                        <span>{{ $tc('splac.templateDetail.tableAddHelp') }}</span>
                                         <sw-button
                                             variant="ghost"
                                             size="small"
@@ -770,7 +740,10 @@
                                 <div class="splac-template-detail__condition-config">
                                     <div class="splac-template-detail__condition-heading">
                                         <strong>{{ $tc('splac.templateDetail.conditionTitle') }}</strong>
-                                        <span>{{ $tc('splac.templateDetail.conditionHelp') }}</span>
+                                        <sw-help-text
+                                            :text="$tc('splac.templateDetail.conditionHelp')"
+                                            :width="320"
+                                        ></sw-help-text>
                                     </div>
                                     <div class="splac-template-detail__condition-fields">
                                         <sw-text-field
@@ -890,9 +863,6 @@
                         class="splac-template-detail__preview-content"
                         v-html="renderDescriptionLocale(activeDescriptionLocale)"
                     ></div>
-                    <p v-else class="splac-template-detail__preview-empty">
-                        {{ $tc('splac.templateDetail.previewEmpty') }}
-                    </p>
                 </div>
 
                 <sw-modal
@@ -900,9 +870,6 @@
                     :title="$tc('splac.templateDetail.insertImageTitle')"
                     @modal-close="closeImageEditor"
                 >
-                    <p class="splac-template-detail__image-help">
-                        {{ $tc('splac.templateDetail.insertImageHelp') }}
-                    </p>
                     <sw-media-field
                         v-model:value="imageMediaId"
                         :label="$tc('splac.templateDetail.imageMedia')"
@@ -942,13 +909,11 @@
                     :title="$tc('splac.templateDetail.tableFieldInstructionTitle')"
                     @modal-close="closeTableFieldInstruction"
                 >
-                    <p class="splac-template-detail__hint">
-                        {{ $tc('splac.templateDetail.tableFieldInstructionHelp') }}
-                    </p>
                     <sw-textarea-field
                         v-model="tableFieldInstructionDraft"
                         :label="$tc('splac.templateDetail.tableFieldInstructionLabel')"
                         :placeholder="$tc('splac.templateDetail.tableFieldInstructionPlaceholder')"
+                        :help-text="$tc('splac.templateDetail.tableFieldInstructionHelp')"
                     ></sw-textarea-field>
 
                     <template #modal-footer>

@@ -111,7 +111,6 @@
                 <sw-empty-state
                     v-else-if="!isLoading"
                     :title="$tc('splac.templates.emptyTitle')"
-                    :subline="$tc('splac.templates.emptySubline')"
                     :absolute="false"
                 >
                     <template #actions>
@@ -178,7 +177,6 @@
                 <sw-empty-state
                     v-else-if="!isLoading"
                     :title="$tc('splac.templates.emptyCategoryTitle')"
-                    :subline="$tc('splac.templates.emptyCategorySubline')"
                     :absolute="false"
                 >
                     <template #actions>
@@ -204,7 +202,10 @@
                 <span class="splac-template-list__import-type">
                     {{ pendingImportTypeLabel }}
                 </span>
-                <p>{{ $tc('splac.templates.importModalHelp') }}</p>
+                <sw-help-text
+                    :text="$tc('splac.templates.importModalHelp')"
+                    :width="320"
+                ></sw-help-text>
             </div>
 
             <sw-text-field

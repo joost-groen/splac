@@ -76,12 +76,8 @@
         background: #f8fafc;
     }
 
-    &__hint {
-        color: #52667a;
-        margin-bottom: 16px;
-    }
-
     &__dropzone {
+        position: relative;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -99,6 +95,12 @@
             border-color: #7c3aed;
             background: #faf7ff;
         }
+    }
+
+    &__source-help {
+        position: absolute;
+        top: 14px;
+        right: 14px;
     }
 
     &__file-input {
@@ -133,13 +135,6 @@
         margin-bottom: 8px;
     }
 
-    &__processing-intro {
-        max-width: 760px;
-        margin: 0 0 20px;
-        color: #52667a;
-        line-height: 1.5;
-    }
-
     &__processing-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -147,7 +142,7 @@
     }
 
     &__processing-option {
-        min-height: 210px;
+        min-height: 148px;
         padding: 22px;
         border: 1px solid #dfe5ec;
         border-radius: 12px;
@@ -167,12 +162,6 @@
             box-shadow: none;
         }
 
-        > p {
-            min-height: 44px;
-            margin: 18px 0;
-            color: #52667a;
-            line-height: 1.5;
-        }
     }
 
     &__processing-option-header {
@@ -192,17 +181,12 @@
 
     &__processing-option-title {
         h3 {
-            margin: 0 0 3px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin: 0;
             color: #1f2f3d;
             font-size: 16px;
-        }
-
-        > span {
-            color: #75889b;
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
         }
     }
 
@@ -218,6 +202,8 @@
     }
 
     &__reasoning-level {
+        margin-top: 18px;
+
         > span {
             display: block;
             margin-bottom: 8px;
@@ -254,23 +240,22 @@
         }
     }
 
-    &__batch-note,
+    &__batch-note {
+        margin-top: 18px;
+    }
+
     &__provider-notice {
         display: flex;
         align-items: center;
         gap: 7px;
         min-height: 34px;
+        margin-top: 18px;
         padding: 8px 10px;
         border-radius: 7px;
-        background: #f1ecff;
-        color: #5b21b6;
-        font-size: 12px;
-        line-height: 1.35;
-    }
-
-    &__provider-notice {
         background: #edf1f5;
         color: #52667a;
+        font-size: 12px;
+        line-height: 1.35;
     }
 
     &__actions {

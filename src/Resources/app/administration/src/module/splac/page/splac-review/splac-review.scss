@@ -68,17 +68,10 @@
         background: linear-gradient(135deg, #faf7ff, #f7f9fc);
 
         h3 {
-            margin: 6px 0 4px;
+            margin: 6px 0 0;
             color: #172b4d;
             font-size: 22px;
             line-height: 1.25;
-        }
-
-        p {
-            max-width: 680px;
-            margin: 0;
-            color: #607182;
-            line-height: 1.45;
         }
     }
 
@@ -215,11 +208,6 @@
         }
     }
 
-    &__preview-empty {
-        color: #8293a4;
-        font-style: italic;
-    }
-
     &__character-count {
         margin: -16px 0 18px;
         color: #758ca3;
@@ -289,20 +277,8 @@
 
     &__category-footer {
         display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 12px 14px;
+        justify-content: flex-end;
         margin-top: 24px;
-        border-radius: 7px;
-        background: #eef5ff;
-        color: #365d85;
-        font-size: 12px;
-        line-height: 1.45;
-
-        .sw-icon {
-            flex: 0 0 auto;
-            margin-top: 1px;
-        }
     }
 
     @media (max-width: 1000px) {

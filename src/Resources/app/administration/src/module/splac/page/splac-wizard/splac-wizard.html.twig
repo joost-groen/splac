@@ -26,7 +26,6 @@
                 <sw-empty-state
                     v-if="!templates.length"
                     :title="$tc('splac.wizard.noTemplatesTitle')"
-                    :subline="$tc('splac.wizard.noTemplatesSubline')"
                     :absolute="false"
                 ></sw-empty-state>
 
@@ -67,8 +66,6 @@
                 position-identifier="splac-wizard-sources"
                 :title="$tc('splac.wizard.step2Title')"
             >
-                <p class="splac-wizard__hint">{{ $tc('splac.wizard.sourcesHint') }}</p>
-
                 <div
                     class="splac-wizard__dropzone"
                     :class="{ 'is--dragging': isDragging }"
@@ -77,6 +74,12 @@
                     @drop="onDrop"
                     @click="$refs.fileInput.click()"
                 >
+                    <sw-help-text
+                        class="splac-wizard__source-help"
+                        :text="$tc('splac.wizard.sourcesHint')"
+                        :width="320"
+                        @click.stop
+                    ></sw-help-text>
                     <sw-icon name="regular-cloud-upload" size="32px"></sw-icon>
                     <p>{{ $tc('splac.wizard.dropzoneText') }}</p>
                     <input
@@ -239,10 +242,6 @@
                         {{ $tc('splac.wizard.extendedBetaActive', 0, { provider: providerLabel }) }}
                     </sw-alert>
 
-                    <p class="splac-wizard__processing-intro">
-                        {{ $tc('splac.wizard.aiProcessingHint') }}
-                    </p>
-
                     <div class="splac-wizard__processing-grid">
                         <section
                             class="splac-wizard__processing-option"
@@ -256,8 +255,13 @@
                                     <sw-icon name="regular-lightbulb" size="22px"></sw-icon>
                                 </span>
                                 <div class="splac-wizard__processing-option-title">
-                                    <h3>{{ $tc('splac.wizard.reasoningTitle') }}</h3>
-                                    <span>{{ $tc('splac.wizard.qualityControl') }}</span>
+                                    <h3>
+                                        {{ $tc('splac.wizard.reasoningTitle') }}
+                                        <sw-help-text
+                                            :text="$tc('splac.wizard.reasoningHelp')"
+                                            :width="300"
+                                        ></sw-help-text>
+                                    </h3>
                                 </div>
                                 <sw-switch-field
                                     v-model:value="input.reasoningEnabled"
@@ -265,8 +269,6 @@
                                     :label="$tc('splac.wizard.reasoningToggle')"
                                 ></sw-switch-field>
                             </div>
-
-                            <p>{{ $tc('splac.wizard.reasoningHelp') }}</p>
 
                             <div
                                 v-if="llmCapabilities.reasoning && input.reasoningEnabled"
@@ -303,8 +305,13 @@
                                     <sw-icon name="regular-clock" size="22px"></sw-icon>
                                 </span>
                                 <div class="splac-wizard__processing-option-title">
-                                    <h3>{{ $tc('splac.wizard.batchTitle') }}</h3>
-                                    <span>{{ $tc('splac.wizard.costControl') }}</span>
+                                    <h3>
+                                        {{ $tc('splac.wizard.batchTitle') }}
+                                        <sw-help-text
+                                            :text="$tc('splac.wizard.batchHelp')"
+                                            :width="300"
+                                        ></sw-help-text>
+                                    </h3>
                                 </div>
                                 <sw-switch-field
                                     v-model:value="input.batchProcessing"
@@ -313,11 +320,11 @@
                                 ></sw-switch-field>
                             </div>
 
-                            <p>{{ $tc('splac.wizard.batchHelp') }}</p>
-
                             <div v-if="llmCapabilities.batchProcessing" class="splac-wizard__batch-note">
-                                <sw-icon name="regular-info-circle" size="14px"></sw-icon>
-                                {{ $tc('splac.wizard.batchTiming') }}
+                                <sw-help-text
+                                    :text="$tc('splac.wizard.batchTiming')"
+                                    :width="300"
+                                ></sw-help-text>
                             </div>
 
                             <div v-else class="splac-wizard__provider-notice">

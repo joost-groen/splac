@@ -255,7 +255,6 @@
                             <h3>
                                 {{ categoryReviewName || $tc('splac.review.categoryUntitled') }}
                             </h3>
-                            <p>{{ $tc('splac.review.categoryReviewHelp') }}</p>
                         </div>
                         <span
                             v-if="isCategoryReviewInvalid"
@@ -351,9 +350,6 @@
                                     class="splac-review__category-description-preview"
                                     v-html="categoryReviewDescription"
                                 ></div>
-                                <p v-else class="splac-review__preview-empty">
-                                    {{ $tc('splac.review.categoryDescriptionEmpty') }}
-                                </p>
                             </article>
                         </div>
                     </div>
@@ -432,21 +428,20 @@
                                         || categoryReviewName
                                         || $tc('splac.review.categoryUntitled') }}
                                 </h3>
-                                <p>
-                                    {{ categoryReviewMetaDescription
-                                        || $tc('splac.review.categoryMetaDescriptionEmpty') }}
+                                <p v-if="categoryReviewMetaDescription">
+                                    {{ categoryReviewMetaDescription }}
                                 </p>
                             </article>
                         </div>
                     </div>
 
                     <div class="splac-review__category-footer">
-                        <sw-icon name="regular-info-circle" small></sw-icon>
-                        <span>
-                            {{ isDone
+                        <sw-help-text
+                            :text="isDone
                                 ? $tc('splac.review.categoryCreatedHelp')
-                                : $tc('splac.review.categoryCreationHelp') }}
-                        </span>
+                                : $tc('splac.review.categoryCreationHelp')"
+                            :width="360"
+                        ></sw-help-text>
                     </div>
                 </sw-card>
             </template>
@@ -457,7 +452,6 @@
             >
                 <sw-empty-state
                     :title="$tc('splac.review.notReadyTitle')"
-                    :subline="$tc('splac.review.notReadySubline')"
                     :absolute="false"
                 ></sw-empty-state>
             </sw-card>

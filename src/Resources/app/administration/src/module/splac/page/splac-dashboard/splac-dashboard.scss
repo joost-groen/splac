@@ -50,26 +50,11 @@
         margin-bottom: 24px;
 
         h3 {
-            margin: 6px 0 6px;
+            margin: 0;
             font-size: 22px;
             font-weight: 600;
             letter-spacing: -0.2px;
         }
-
-        p {
-            margin: 0;
-            color: #52667a;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-    }
-
-    &__statistics-eyebrow {
-        color: #7c3aed;
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
     }
 
     &__metric-grid {
@@ -94,17 +79,11 @@
         }
 
         strong {
-            margin: 8px 0 4px;
+            margin-top: 8px;
             color: #172b4d;
             font-size: 24px;
             font-weight: 600;
             line-height: 1.1;
-        }
-
-        small {
-            color: #758ca3;
-            font-size: 11px;
-            line-height: 1.35;
         }
     }
 
@@ -132,15 +111,9 @@
         margin-bottom: 18px;
 
         h4 {
-            margin: 0 0 3px;
+            margin: 0;
             font-size: 15px;
             font-weight: 600;
-        }
-
-        p {
-            margin: 0;
-            color: #758ca3;
-            font-size: 12px;
         }
     }
 
@@ -205,7 +178,6 @@
         div {
             display: flex;
             flex-direction: column;
-            gap: 2px;
         }
 
         span {
@@ -214,10 +186,6 @@
             font-weight: 600;
         }
 
-        small {
-            color: #6f5b9e;
-            font-size: 11px;
-        }
 
         strong {
             flex: 0 0 auto;
