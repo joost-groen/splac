@@ -88,8 +88,34 @@ apk add --no-cache poppler-utils tesseract-ocr tesseract-ocr-data-eng
 
 ## Installation
 
+Run Composer from the Shopware project root (the directory containing Shopware's main
+`composer.json`), not from inside `custom/plugins/splac`.
+
+### Install directly from GitHub
+
+The package is not currently published on Packagist and the repository does not yet contain
+a stable release tag. Register the GitHub repository as a Composer VCS source and install the
+`main` development branch:
+
 ```bash
-composer require joostgroen/splac
+composer config repositories.splac vcs https://github.com/joost-groen/splac.git
+composer require "joostgroen/splac:dev-main" -W
+
+bin/console plugin:refresh
+bin/console plugin:install --activate Splac
+bin/console cache:clear
+```
+
+Composer stores the repository declaration in the Shopware project's root `composer.json`.
+If the repository is private, the server also needs GitHub credentials with read access.
+
+### Install a published release
+
+Once the repository has a stable release tag (for example `v1.0.0`) and is registered on
+Packagist, install it with a stable version constraint:
+
+```bash
+composer require joostgroen/splac:^1.0
 bin/console plugin:refresh
 bin/console plugin:install --activate Splac
 bin/console cache:clear
