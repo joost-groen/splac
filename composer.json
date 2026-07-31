@@ -3,7 +3,6 @@
     "description": "Splac - Shopware Product Listing Acceleration Copilot",
     "type": "shopware-platform-plugin",
     "license": "MIT",
-    "version": "1.0.0",
     "require": {
         "shopware/core": "~6.7.0",
         "smalot/pdfparser": "^2.12",
